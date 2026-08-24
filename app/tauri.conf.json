@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Clow Deck",
+  "version": "0.4.1",
+  "identifier": "my.autom.clowdeck",
+  "build": {
+    "frontendDist": "web"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "icon": ["icons/icon.icns", "icons/icon.png"],
+    "category": "DeveloperTool",
+    "macOS": {
+      "minimumSystemVersion": "12.0"
+    }
+  }
+}

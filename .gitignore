@@ -1,0 +1,23 @@
+# segredos / config local (nunca versionar)
+.env
+.mcp.json
+.claude/
+
+# macOS
+.DS_Store
+
+# builds Rust (agent CLI e app Tauri)
+agent/target/
+app/target/
+
+# gerados pelo build do Tauri (schemas/caches)
+app/gen/
+
+# intermediario da geracao de icones do app (icon.icns e o produto final)
+app/icons/icon.iconset/
+
+# artefatos eventuais do arduino-cli (--export-binaries)
+firmware/**/build/
+
+# logs locais
+*.log

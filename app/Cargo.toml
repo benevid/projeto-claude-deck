@@ -1,0 +1,18 @@
+[package]
+name = "clow-deck-app"
+version = "0.4.1"
+edition = "2021"
+description = "Clow Deck — app de bandeja (embute o agente e mostra o deck virtual)"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "2"
+clowdeck-agent = { path = "../agent" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+tracing = "0.1"
+directories = "5"
