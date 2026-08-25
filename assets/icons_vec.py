@@ -82,6 +82,17 @@ ICONS = {
         ("arrowhead", 15.6, 12, 0, 3.4),
         ("line", 20.2, 6.6, 20.2, 17.4),
     ]},
+    # nova sessao — sinal de mais
+    "plus": {"prims": [
+        ("line", 12, 4.5, 12, 19.5),
+        ("line", 4.5, 12, 19.5, 12),
+    ], "stroke": 2.6},
+    # sair da sessao — porta aberta com seta saindo
+    "exit": {"prims": [
+        ("pline", [(12.5, 4.5), (4.5, 4.5), (4.5, 19.5), (12.5, 19.5)]),
+        ("line", 10, 12, 19.2, 12),
+        ("arrowhead", 19.2, 12, 0, 3.4),
+    ]},
     # atencao — triangulo com !
     "warn": {"prims": [
         ("pline", [(12, 3.6), (21.2, 19.6), (2.8, 19.6), (12, 3.6)]),

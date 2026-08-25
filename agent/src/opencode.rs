@@ -55,7 +55,6 @@ pub async fn run_opencode(st: Shared) {
         return;
     }
     let mut last_ev = max_rowid(&db, "event").await;
-    let mut last_perm = max_rowid(&db, "permission").await;
     let mut dirs: HashMap<String, String> = HashMap::new();
     tracing::info!("opencode: acompanhando eventos de {} (a partir do rowid {last_ev})", db.display());
     let mut iv = tokio::time::interval(Duration::from_millis(1500));
@@ -101,7 +100,21 @@ pub async fn run_opencode(st: Shared) {
             let Some(sid) = sid else { continue };
             let Some(dir) = dirs.get(sid) else { continue };
             let state = if t.starts_with("message.part.updated") {
-                State::Working
+                // tool parts carregam state.status: um pedido de Allow/Reject fica
+                // parado em "pending" (auto-aprovados viram "running" no mesmo lote,
+                // e o ultimo estado do lote vence)
+                let part = data.get("part");
+                let is_tool = part.and_then(|pt| pt.get("type")).and_then(|v| v.as_str()) == Some("tool");
+                let status = part
+                    .and_then(|pt| pt.get("state"))
+                    .and_then(|st| st.get("status"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if is_tool && status == "pending" {
+                    State::Attention
+                } else {
+                    State::Working
+                }
             } else if t.starts_with("message.updated") {
                 let role = data.get("info").and_then(|i| i.get("role")).and_then(|v| v.as_str()).unwrap_or("");
                 let done = data
@@ -120,23 +133,6 @@ pub async fn run_opencode(st: Shared) {
                 continue;
             };
             per_dir.insert(dir.clone(), state);
-        }
-        // pedidos de aprovacao novos (tabela dedicada): melhor esforco de mapeamento
-        let sqlp = format!("select rowid from permission where rowid > {last_perm} order by rowid limit 10");
-        if let Some(rows) = query_json(&db, &sqlp).await {
-            if !rows.is_empty() {
-                for r in &rows {
-                    if let Some(rid) = r.get("rowid").and_then(|v| v.as_i64()) {
-                        last_perm = last_perm.max(rid);
-                    }
-                }
-                if let Some(dir) = query_json(&db, "select directory from session order by time_updated desc limit 1")
-                    .await
-                    .and_then(|r| r.first().and_then(|v| v.get("directory")).and_then(|v| v.as_str()).map(String::from))
-                {
-                    per_dir.insert(dir, State::Attention);
-                }
-            }
         }
         let mut changed = false;
         for (dir, state) in per_dir {

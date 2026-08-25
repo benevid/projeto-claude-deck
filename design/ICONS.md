@@ -39,6 +39,8 @@ Regenerar (da raiz do repo): `python3 tools/gen_icons.py`
 | `clear` | /clear | lixeira |
 | `ack` | (sem botao dedicado; tap na celula DONE ja faz ACK) | check |
 | `tab` | Tab (aceita a sugestao do terminal) | seta ate a barra |
+| `exit` | encerrar a sessao (pagina de comandos, com confirmacao) | porta aberta com seta saindo |
+| `plus` | nova sessao (CLEAR mapeado por engine) | sinal de mais |
 | `cmd` | comandos | terminal emoldurado (moldura + chevron + underscore, ref. Material/Stitch) |
 | `lang` | idioma | globo (equador + meridiano) |
 | `bright` | brilho | sol (8 raios) |

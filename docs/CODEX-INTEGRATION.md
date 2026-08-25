@@ -110,7 +110,11 @@ em sqlite** (`~/.local/share/opencode/opencode.db`): tabela `event` (type/data J
 - `agent/src/opencode.rs`: poll de 1,5 s por rowid via o `sqlite3 -json` do sistema
   (zero dependencias novas); `message.part.updated`->WORKING, `message.updated`
   (assistant + time.completed)->DONE, eventos/linhas de `permission`->ATTENTION
-  (permission sem vinculo de sessao no schema: melhor esforco = sessao mais recente).
+  — CORRECAO 2026-08-25 apos teste real: a tabela `permission` guarda regras
+  PERSISTIDAS ("allow always"), nao pedidos pendentes (heuristica removida); o pedido
+  pendente aparece como tool part com `state.status == "pending"` no evento
+  `message.part.updated` — e essa a fonte de ATTENTION (o ultimo estado de cada lote
+  de poll vence, entao pending->running de tools auto-aprovados nao pisca).
 - Descoberta: binario `opencode` com TTY, excluindo os subcomandos de servico
   (serve/acp/run/db/...). Flag de entrada **bit3 = EF_OPENCODE**; chip "OC"; logo
   oficial (lobehub) como marca d'agua, no firmware e no deck virtual.

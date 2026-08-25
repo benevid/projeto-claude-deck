@@ -126,7 +126,7 @@ struct GridUI {
 static GridUI g_grid;
 struct SearchUI { lv_obj_t *cont, *img, *lid[2], *title, *sub, *status, *foot; int baseY; bool frameB; };
 static SearchUI g_search;
-struct SessUI { lv_obj_t *title, *stateLbl, *info, *voiceLbl, *voiceIco; };
+struct SessUI { lv_obj_t *title, *stateLbl, *info, *voiceLbl, *voiceIco, *approveBtn, *denyBtn; };
 static SessUI g_sess;
 struct StripUI { lv_obj_t *l1, *l2; };
 static StripUI g_strip;
@@ -942,6 +942,35 @@ static void voice_ev_cb(lv_event_t *e) {
     voice_set(TRS("segure e fale", "hold and talk"), C_ACCENT);
   }
 }
+// pisca aprovar/negar quando o modelo espera Allow/Reject (estado ATTENTION)
+static void session_anim(uint32_t now) {
+  static bool lastOn = false, wasAttn = false;
+  if (!g_sess.approveBtn || g_selCell < 0) { wasAttn = false; return; }
+  bool attn = g_model.s[g_selCell].state == SS_ATTENTION;
+  bool on = attn && (((now / 500) & 1) == 0);
+  if (attn) {
+    if (on != lastOn || !wasAttn) {
+      lv_obj_t *b[2] = { g_sess.approveBtn, g_sess.denyBtn };
+      for (int i = 0; i < 2; i++) {
+        if (!b[i]) continue;
+        lv_obj_set_style_border_width(b[i], 3, 0);
+        lv_obj_set_style_border_color(b[i], lv_color_hex(C_ATTN), 0);
+        lv_obj_set_style_bg_color(b[i], lv_color_hex(on ? over_cell(C_ATTN, 70) : C_CELL), 0);
+      }
+      lastOn = on;
+    }
+  } else if (wasAttn) {
+    lv_obj_t *b[2] = { g_sess.approveBtn, g_sess.denyBtn };
+    for (int i = 0; i < 2; i++) {
+      if (!b[i]) continue;
+      lv_obj_set_style_border_width(b[i], 2, 0);
+      lv_obj_set_style_border_color(b[i], lv_color_hex(C_CELL_LINE), 0);
+      lv_obj_set_style_bg_color(b[i], lv_color_hex(C_CELL), 0);
+    }
+  }
+  wasAttn = attn;
+}
+
 static void session_apply() {
   if (!g_sess.title || g_selCell < 0) return;
   const SessEntry &e = g_model.s[g_selCell];
@@ -964,7 +993,7 @@ static void ui_session() {
   bool cdx = (g_model.s[g_selCell].flags & 0x0C) != 0; // engine externo (Codex/opencode): sem /voice, com aprovar/negar
   if (cdx) {
     // sem /voice no Codex: a celula vira APROVAR (pedido pendente -> 'y' no TUI)
-    cell_btn(scr, 2, &ic_ack_4, TRS("aprovar", "approve"), C_DONE, act_btn_cb, (void *)(intptr_t)PL(ACT_APPROVE, c));
+    g_sess.approveBtn = cell_btn(scr, 2, &ic_ack_4, TRS("aprovar", "approve"), C_DONE, act_btn_cb, (void *)(intptr_t)PL(ACT_APPROVE, c));
     g_sess.voiceIco = NULL;
     g_sess.voiceLbl = NULL;
   } else {
@@ -975,7 +1004,7 @@ static void ui_session() {
     voice_idle_text();
   }
   if (cdx)
-    cell_btn(scr, 3, &ic_esc_4,   TRS("negar", "deny"),    C_ERR,  act_btn_cb, (void *)(intptr_t)PL(ACT_ESC, c));
+    g_sess.denyBtn = cell_btn(scr, 3, &ic_esc_4, TRS("negar", "deny"), C_ERR, act_btn_cb, (void *)(intptr_t)PL(ACT_ESC, c));
   else
     cell_btn(scr, 3, &ic_mode_4,  TRS("modo", "mode"),     C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_MODE_CYCLE, c));
   cell_btn(scr, 4, &ic_esc_4,     "esc",                   C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_ESC, c));
@@ -1010,10 +1039,12 @@ static void ui_cmd() {
 
   struct Item { const lv_image_dsc_t *ic; const char *t; uint32_t col, pl; };
   // so o que NAO esta na pagina da sessao (sem repetir) + /init + customs
-  Item items[2 + DECK_CUSTOM_MAX];
+  Item items[3 + DECK_CUSTOM_MAX];
   int n = 0;
-  items[n++] = { &ic_clear_4, "/clear", C_ERR,    PL(ACT_CLEAR, target) | PL_CONFIRM };
+  // "nova sessao": o agente mapeia por engine (claude /clear; codex e opencode /new)
+  items[n++] = { &ic_plus_4,  TRS("nova sessao", "new session"), C_ERR, PL(ACT_CLEAR, target) | PL_CONFIRM };
   items[n++] = { &ic_cmd_4,   "/init",  C_ACCENT, PL(ACT_INIT, target) };
+  items[n++] = { &ic_exit_4,  "/exit",  C_ERR,    PL(ACT_EXIT, target) | PL_CONFIRM };
   for (int i = 0; i < g_customN; i++)
     items[n++] = { &ic_cmd_4, g_custom[i].label, C_ACCENT,
                    PL(ACT_CUSTOM_BASE + i, target) | (g_custom[i].confirm ? PL_CONFIRM : 0) };
@@ -1321,6 +1352,7 @@ void loop() {
     if (now - lastAnim > ANIM_TICK_MS) { lastAnim = now; grid_anim(now); }
     if (now - last1s > 1000) { last1s = now; grid_tick_1s(); }
   } else if (g_state == ST_SESSION) {
+    if (now - lastAnim > ANIM_TICK_MS) { lastAnim = now; session_anim(now); }
     if (now - last1s > 1000) { last1s = now; session_apply(); }
     if (!g_voice && g_voiceHintUntil && now > g_voiceHintUntil) { g_voiceHintUntil = 0; voice_idle_text(); }
   }

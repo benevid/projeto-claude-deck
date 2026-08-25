@@ -193,6 +193,11 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
                 inject_after_focus(st, cell, &format!("aprovar ('{key}')"), move |i| i.text(key)).await
             }
         }
+        Action::Exit => {
+            // encerrar a sessao e interativo: sempre teclado (sem queue)
+            let cmd = if is_codex { "/quit" } else { "/exit" };
+            inject_after_focus(st, cell, cmd, move |i| i.submit(cmd)).await
+        }
         Action::Init => {
             // /init existe nos dois engines (claude: CLAUDE.md; codex: AGENTS.md)
             if is_codex {

@@ -156,6 +156,7 @@ pub enum Action {
     Tab,
     Approve,
     Init,
+    Exit,
     VoiceStart,
     VoiceStop,
     VoiceCancel,
@@ -175,6 +176,8 @@ impl Action {
     pub const APPROVE: u8 = 0x17;
     /// digita `/init` (claude: CLAUDE.md; codex: AGENTS.md)
     pub const INIT: u8 = 0x18;
+    /// encerra a sessao do TUI (claude/opencode: /exit; codex: /quit)
+    pub const EXIT: u8 = 0x19;
     pub const VOICE_START: u8 = 0x20;
     pub const VOICE_STOP: u8 = 0x21;
     pub const VOICE_CANCEL: u8 = 0x22;
@@ -192,6 +195,7 @@ impl Action {
             Self::TAB => Action::Tab,
             Self::APPROVE => Action::Approve,
             Self::INIT => Action::Init,
+            Self::EXIT => Action::Exit,
             Self::VOICE_START => Action::VoiceStart,
             Self::VOICE_STOP => Action::VoiceStop,
             Self::VOICE_CANCEL => Action::VoiceCancel,
@@ -211,6 +215,7 @@ impl Action {
             Action::Tab => Self::TAB,
             Action::Approve => Self::APPROVE,
             Action::Init => Self::INIT,
+            Action::Exit => Self::EXIT,
             Action::VoiceStart => Self::VOICE_START,
             Action::VoiceStop => Self::VOICE_STOP,
             Action::VoiceCancel => Self::VOICE_CANCEL,
@@ -229,6 +234,7 @@ impl Action {
             "tab" => Action::Tab,
             "approve" => Action::Approve,
             "init" => Action::Init,
+            "exit" => Action::Exit,
             "voice_start" => Action::VoiceStart,
             "voice_stop" => Action::VoiceStop,
             "voice_cancel" => Action::VoiceCancel,
@@ -254,6 +260,7 @@ impl Action {
             Action::Tab => "tab".into(),
             Action::Approve => "approve".into(),
             Action::Init => "init".into(),
+            Action::Exit => "exit".into(),
             Action::VoiceStart => "voice_start".into(),
             Action::VoiceStop => "voice_stop".into(),
             Action::VoiceCancel => "voice_cancel".into(),

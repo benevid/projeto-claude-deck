@@ -213,6 +213,7 @@ header .dot.on{background:var(--ok)}
 .cell.danger{border-color:rgba(200,82,74,.55)}.cell.danger .albl{color:var(--bad)}
 .cell.voice{border-color:var(--cline)}
 .cell.rec{border-color:var(--bad);box-shadow:0 0 16px 2px rgba(200,82,74,.5);animation:blink .5s steps(2,end) infinite}
+.cell.action.attn{border-width:3px;border-color:var(--attn);box-shadow:0 0 16px 2px rgba(240,179,91,.55);animation:blink .5s steps(2,end) infinite}.cell.action.attn .albl{color:var(--attn)}
 .strip.sess{justify-content:flex-start;gap:14px;padding:0 52px 0 16px}
 .strip .sinfo{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .strip .sinfo b{font-size:15px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -261,12 +262,12 @@ function buildGrid(){const L=S.layout||{session_cells:6};const n=Math.min(L.sess
 function buildSession(){const c=(S.cells||[])[pageCell]||{};const t=pageCell;const cdx=!!(c.codex||c.opencode);gridShape();
  mkcell('&lt; voltar','back',()=>goto2('grid'));
  mkcell('focar','accent',()=>send('action',t,'focus'));
- if(cdx)mkcell('aprovar','ok',()=>send('action',t,'approve'));
+ if(cdx){const ap=mkcell('aprovar','ok',()=>send('action',t,'approve'));ap.id='s-approve'}
  else{const v=mkcell('voz<br><small>segure p/ falar</small>','voice');
   v.onpointerdown=e=>{e.preventDefault();v.classList.add('rec');send('action',t,'voice_start')};
   const up=()=>{if(!v.classList.contains('rec'))return;v.classList.remove('rec');send('action',t,'voice_stop')};
   v.onpointerup=up;v.onpointerleave=up;v.onpointercancel=up}
- if(cdx)mkcell('negar','danger',()=>send('action',t,'esc'));else mkcell('modo',null,()=>send('action',t,'mode_cycle'));
+ if(cdx){const dn=mkcell('negar','danger',()=>send('action',t,'esc'));dn.id='s-deny'}else mkcell('modo',null,()=>send('action',t,'mode_cycle'));
  mkcell('esc',null,()=>send('action',t,'esc'));
  mkcell('enter',null,()=>send('action',t,'enter'));
  mkcell('tab','ok',()=>send('action',t,'tab'));
@@ -278,8 +279,9 @@ let cmdPage=0;
 function buildCmd(){gridShape();const t=pageCell;const c=(S.cells||[])[t]||{};const cdx=!!(c.codex||c.opencode);
  mkcell('&lt; voltar','back',()=>{cmdPage=0;goto2('session')});
  const items=[
-  {l:cdx?'/new':'/clear',cls:'danger',fn:()=>{if(confirm('Confirmar '+(cdx?'/new':'/clear')+'?'))send('action',t,'clear')}},
-  {l:'/init',cls:'accent',fn:()=>send('action',t,'init')}];
+  {l:'nova sessão',cls:'danger',fn:()=>{if(confirm('Nova sessão? (claude: /clear · codex/opencode: /new)'))send('action',t,'clear')}},
+  {l:'/init',cls:'accent',fn:()=>send('action',t,'init')},
+  {l:'/exit',cls:'danger',fn:()=>{if(confirm('Encerrar a sessão?'))send('action',t,'exit')}}];
  (S.commands||[]).forEach((cm,i)=>items.push({l:(cm.confirm?'! ':'')+cm.label,cls:null,fn:()=>{if(cm.confirm&&!confirm('Confirmar '+cm.label+'?'))return;send('action',t,'custom_'+i)}}));
  const per=7;const start=cmdPage*per;const more=(start+per)<items.length;
  items.slice(start,start+per).forEach(it=>mkcell(it.l,it.cls,it.fn));
@@ -297,7 +299,8 @@ function render(){const key=JSON.stringify([S.layout||{},page,pageCell]);
  else if(page==='session'){const c=(S.cells||[])[pageCell];if(!c||!c.sid){goto2('grid');return}
   const st=document.getElementById('sst');if(st){st.textContent=c.state_name;st.className='st '+c.state_name}
   const si=document.getElementById('sinfo2');if(si)si.textContent=(c.mode_name!=='--'?c.mode_name+' · ':'')+fmtAge(c.age_s)+' · célula '+(pageCell+1)+(c.active?' · ativa':'');
-  const m=document.getElementById('smasc');if(m)m.className='masc big '+(c.opencode?'moc':c.codex?'mcodex':'mclaude')+' '+c.state_name}
+  const m=document.getElementById('smasc');if(m)m.className='masc big '+(c.opencode?'moc':c.codex?'mcodex':'mclaude')+' '+c.state_name;
+  const attn=c.state_name==='attention';for(const id of ['s-approve','s-deny']){const b=document.getElementById(id);if(b)b.classList.toggle('attn',attn)}}
  const bl=document.getElementById('ble');if(bl){bl.innerHTML='<i class="dot '+(S.ble.connected?'on':'')+'"></i>';bl.title=S.ble.enabled?(S.ble.connected?'deck: '+S.ble.device:'procurando deck'):'BLE off'}
  if(S.ble.hint&&S.ble.hint!==lastHint){say('aviso: '+S.ble.hint);lastHint=S.ble.hint}}
 async function refresh(){try{Object.assign(S,await (await fetch('/state')).json());render()}catch(e){say('agente fora do ar')}}
