@@ -187,6 +187,7 @@ def sparkle_tile(size=160):
 LOGOS = {
     "claude": ("claudecode.webp", "bgdist"),
     "codexlogo": ("codex.png", "alpha"),
+    "oclogo": ("opencode.png", "alpha"),
 }
 
 def raster_logo(fname, mode, size):

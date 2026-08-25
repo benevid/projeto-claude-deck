@@ -12,6 +12,7 @@ pub mod hooks;
 pub mod inject;
 pub mod keybinding;
 pub mod model;
+pub mod opencode;
 pub mod protocol;
 pub mod service;
 pub mod web;
@@ -129,6 +130,7 @@ pub async fn serve(st: Shared, listener: tokio::net::TcpListener, on_freeze: Opt
     }
     tokio::spawn(discovery::run_loop(st.clone()));
     tokio::spawn(codex::run_codex(st.clone()));
+    tokio::spawn(opencode::run_opencode(st.clone()));
     {
         let st = st.clone();
         tokio::spawn(async move {

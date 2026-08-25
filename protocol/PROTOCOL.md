@@ -121,7 +121,7 @@ Entrada (18 bytes):
 | 0 | u8 | `sid` — id curto da sessao (1..255). **0 = celula vazia** |
 | 1 | u8 | estado (tabela abaixo) |
 | 2 | u8 | modo de permissao (tabela abaixo) |
-| 3 | u8 | flags: bit0 ativa · bit1 sem hooks (so descoberta por processo) · bit2 engine Codex CLI (M6) |
+| 3 | u8 | flags: bit0 ativa · bit1 sem hooks (so descoberta por processo) · bit2 engine Codex CLI (M6) · bit3 engine opencode (M7) |
 | 4 | u16 | `age_s` — segundos no estado atual (satura em 65535) |
 | 6 | char[12] | rotulo ASCII, zero-padded, **sem** terminador garantido (basename do cwd, transliterado) |
 

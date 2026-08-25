@@ -78,6 +78,17 @@ fn engine_of(p: &Proc) -> Option<Engine> {
         }
         return Some(Engine::Codex);
     }
+    // opencode (M7): TUI = binario `opencode` sem subcomando de servico; sessao real tem TTY
+    if comm_base == "opencode" || first_base == "opencode" {
+        let second = p.args.split_whitespace().nth(1).unwrap_or("");
+        const NOT_TUI: &[&str] = &["serve", "acp", "run", "db", "export", "import", "session",
+            "plugin", "plug", "mcp", "providers", "auth", "agent", "upgrade", "uninstall",
+            "github", "pr", "web", "models", "stats", "completion", "debug", "attach"];
+        if p.tty.is_none() || NOT_TUI.contains(&second) {
+            return None;
+        }
+        return Some(Engine::Opencode);
+    }
     None
 }
 

@@ -21,7 +21,7 @@ struct SessEntry {
   uint8_t  sid;                       // 0 = celula vazia
   uint8_t  state;                     // SessState
   uint8_t  mode;                      // SessMode
-  uint8_t  flags;                     // bit0 ativa, bit1 sem hooks, bit2 engine Codex
+  uint8_t  flags;                     // bit0 ativa, bit1 sem hooks, bit2 Codex, bit3 opencode
   uint16_t age;                       // segundos no estado (no momento do envio)
   char     label[DECK_LABEL_LEN + 1]; // ASCII, terminado
 };

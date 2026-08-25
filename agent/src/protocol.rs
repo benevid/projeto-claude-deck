@@ -44,6 +44,8 @@ pub const EF_ACTIVE: u8 = 1 << 0;
 pub const EF_NO_HOOKS: u8 = 1 << 1;
 /// sessao de outro engine (Codex CLI) — M6
 pub const EF_CODEX: u8 = 1 << 2;
+/// sessao opencode — M7
+pub const EF_OPENCODE: u8 = 1 << 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[repr(u8)]
@@ -370,6 +372,8 @@ pub struct CellEntry {
     pub no_hooks: bool,
     /// engine Codex CLI (EF_CODEX)
     pub codex: bool,
+    /// engine opencode (EF_OPENCODE)
+    pub opencode: bool,
     pub age_s: u16,
     pub label: String,
 }
@@ -455,6 +459,9 @@ pub fn encode_sessions(v: &SessionsView) -> Vec<u8> {
         }
         if e.codex {
             f |= EF_CODEX;
+        }
+        if e.opencode {
+            f |= EF_OPENCODE;
         }
         b.push(f);
         b.extend_from_slice(&e.age_s.to_le_bytes());
@@ -607,6 +614,7 @@ mod tests {
             active: true,
             no_hooks: false,
             codex: false,
+            opencode: false,
             age_s: 42,
             label: "deck".into(),
         };

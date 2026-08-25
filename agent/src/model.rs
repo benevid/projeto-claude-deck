@@ -78,6 +78,7 @@ impl TerminalApp {
 pub enum Engine {
     Claude,
     Codex,
+    Opencode,
 }
 
 /// Processo de sessao (claude/codex) visto pela descoberta.
@@ -510,14 +511,15 @@ impl SessionTable {
         }
     }
 
-    /// Estado vindo do app-server do Codex (M6.a): aplica na sessao Codex daquele cwd.
-    pub fn apply_codex_state(&mut self, cwd: &str, state: State) -> Option<usize> {
+    /// Estado vindo de um engine externo (codex/opencode): aplica na sessao
+    /// daquele engine + cwd (M6/M7).
+    pub fn apply_engine_state(&mut self, engine: Engine, cwd: &str, state: State) -> Option<usize> {
         for i in 0..self.cells.len() {
             let Some(s) = self.cells[i].as_mut() else { continue };
-            if s.engine == Engine::Codex && s.cwd == cwd && s.state != State::Dead {
+            if s.engine == engine && s.cwd == cwd && s.state != State::Dead {
                 if s.state != state {
                     s.set_state(state);
-                    s.last_event = "codex".into();
+                    s.last_event = "engine".into();
                     self.bump();
                 }
                 return Some(i);
@@ -590,6 +592,7 @@ impl SessionTable {
                     active: self.active == Some(i),
                     no_hooks: !s.has_hooks,
                     codex: s.engine == Engine::Codex,
+                    opencode: s.engine == Engine::Opencode,
                     age_s: s.age_s(),
                     label: s.label.clone(),
                 },

@@ -54,6 +54,7 @@ pub fn state_json(st: &Shared) -> Value {
                 "active": c.active,
                 "no_hooks": c.no_hooks,
                 "codex": c.codex,
+                "opencode": c.opencode,
                 "age_s": c.age_s,
                 "label": c.label,
                 "pid": s.and_then(|s| s.pid),
@@ -166,6 +167,7 @@ header .dot.on{background:var(--ok)}
 .cell .masc{position:absolute;left:50%;top:42%;width:52px;height:52px;transform:translate(-50%,-50%);background:var(--faint);opacity:.55;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .cell .mclaude{--m:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAACu0lEQVR4nO2YO28TQRDHf+c7h5NDeMggCpAoKAAh0QToaXhUSKBUfJN8hzR8hQgpFRIViIaSgKCJFCkULpAgEuItRxYPn5diZ5z1+ny3+Ezswn/pdJ7defxvdnZ2k8gYwyyjNm0CZZgTrIo5waqYeYJJyXx0ICxgZK8rIzj1JplHMMISS4HHwEmRJ51N9fkJuAP8dGIXElTUgGvAsQkT8/Gdgr1QtsR7wBGgJ04y7BfWipyOQE+eCIgdn3tFRmUEXSLjkPJ9FfnPRRlBhdbFG+AdcAk4T1htqs5bYBs4CywTuAFDM9KT9xpwD9gQOQuwVZ0NsV3zfBbCzWCEJaw7Kc7RXwIWgEaIcw8NsV3KmYvl0dg9eQ8QNAxmpM3wMrSB30BnDIIdsW174yZnrI/EYd0ErjDYB1PR0zq7CnwFLnjjRVCdi8BN8eGOpwz3wdfAFyCKjDExNnO3gCcBAQ8Ct4GnQOwucRdLVPsTDNeh1obW6r9Aa0tr3YWWlsbu6oTfZiLnyUOVPqgNetScG7+PxPtdtRmPi5r37vOKjDFamMeBy47RIeAhcILBZZ8U1Odn4D7wy5nbAr4hm6TIyXvg9H8m+AE4M0qpqFE3xEmX/brwLwt+78yDNmD/smDEdw/bvDsENmpXqenp+EUeEX6e+/WtvpoSy43dR5HzP8AD4ChwFzgFPAd2sPfEZaAFPJPA/tmqYzeAc9iLxitsk78OfAQeAT8kVj6MMSHPprFYEXlV5PUA23XRXRV5ReTNkNhly1Nnv+Yy4LBkvSHygsh6GrmIHZ1MbBLxkYlPPWpHZrCMYFcILkrARMbqIqeOjk9Qx1LRrYuuftAigxtwLIKKl9ha2RW5BbzA9isl40PHtrB/eLVE3hXbnZDAZX1w6gjNoLsM/jW/7Aur2M5+Bmf+fzNzglUxJ1gVM0/wL6JcK3Wr3mcIAAAAAElFTkSuQmCC)}
 .cell .mcodex{--m:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAEtklEQVR4nLWYyYtdRRTGf+++123HJJJ0kIgjGTQ0GNSWIA4g+h8oKAQEUSQo6MJFUDeKqOBecCNqgghmYfaC4s4okoDRoOBEsLPIZIhx6k6/+7moc7rqVdfrd9/ggeLeW7fq1KnvjFUtSYxBraQBCKjHYZhTZ8R5FUGoLkGolFr2vy78G5paIyDYNsEANgLbgVngX2AB+C0Z64K2kr7hFpTUtLWsIWmPpIOSTqmX/pL0haR9kjo2tsr4tK211GDdYYTzhd6Q1M0E60qqs74jkuZsznpJGwvC5t+rWlMVu1rfA54wtdXWn6vPHaUDnAd+BG60sReA48DHwGFgmV6TGUnFbXvuN2QWC2iVKEc5p6OS7svWGBpB9/LrgB+AKaIHNyFH00ORktYxBB8DDvVDslqDedsYLANPATPGuKlw2Ng2cVOVfXdMmDbwIXB38t3LoICg77YGdhB2+CwhlKRBeRLkQp0A5glgOMKBMp2n3vqCpEsNbG1cumzPR21dD09I6lFxmgHeBd4ENiS7+j9JwN7kfYWq7L0LvAY8CSwRjbmVTZ6kwG6fu4m2uWJGboOO3O3AMaJtTNLe+pE73lngZuAi0eNXEHRB9ifveQBeIjjMbcBJJl+5lPkp5sSrJJ0zg00Dsb+fkzRlYx+2vuUJOInz+FKF9FclKO4AtrA61nlZtQV4zvoOA58zKE01o8rWvAHYaShG31BMMw8YWqUUVVs7L2mrAurztvtSoTAqikcVtFTZGj1evEx/p3AUZ4FXbMfHgPeJDjYOedaaBx4nFiKkOt+mGDRLiNS20yVJ99gOr5V0NkF4XBRrSV8rqT3TivckIeX0805Hd4pQPgGcBv4gCQtjUBoPrzd+lau4bUK9s8ZiHhs/Az6yMc8QSv4u0bBrYpFRav3Mwde9guAwoU+9OXidpBMGeeos7jxLknbb+K0KTjMJ9Tq5wz1ocrW93vPQ8g8hJ35Kb8hxo30L+NbmvE5wGkfWx35PqJpzTfj3LkLGKpVuXi1dWOlR+YxwJDNcSbooabP9v0vRaZSMOS1pJuNZaj8niCnjcUbh/IKkVl7N1ISj5Dbrc8N129gDXA28Xdi9j5mz5zp7epux5y5gfQFBD/ifAJdcK2nB6oJsAn6iV8X+7NrkTYUF/HsROEV/uga4MpsvoqPdQTCRCqhLNwt/EiqKVEBn1DbhetNR3CAElLavIWC6GX+/DEwTSr3jJCm0yiZ5RP+Ocjz0cnyts4zP69dSrXj2mgYOAC8TQx65gCS7OsRqG/P/g2pEr8z7tbSc6xBM5kXCeXvVnU5+aPLJMwSod9LntDUGuRZ+JzjbQeAXYlXTmyQKIcCrm3uTwDmJus/J8/1LhTUbH9zdSPcCHxBtM78PdGcZ5iAvQkK4BThD9OA+MwZfedwv6ZsBqAy65pCCJhbt/flByA1CMEdyCngEeAi4Fdhs6C0QKvFZQ9jRzOOjx7iKUJDso2k1PmgHKl+ZbZS0wb7nJH1VQCtHdVnSqwmPid8P+sVjSfiOpKcVDj5/Z4ItSDog6c5hhWui4hLl6stL/psIt2HThFDyKyHW0Vit6WIjCFjkw9oX516ODX12mZSAKaVhJ70PHIn+AyfHLdi2OiXzAAAAAElFTkSuQmCC)}
+.cell .moc{--m:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAABS0lEQVR4nO2ZUUrEMBCGv9p9W0EWPIa+egw9hB5rT7HH8FXv4IuggvtmGx/aWcKSpJuZZulCPiiFdjLzk06mnbRxzhGhjd0oRBe62CQELoJV4t4DcAM4oCkUX3z/AK8hg9AMNuPAN+CukLBj3oF7L/aB1AzugZ4hN0rlo/jexwxSAq/Gw43nEojvqP9SgWcjNYMpOo5y5QQaFKmiFXi2GqkR6IAd8Etg1QUQm2vgkcySlSNQalYHvACfOYGAW+BjjHlybdU+4g3wzbDI+glbsdloAlkWyR95AoPv2ikWX2aqQCtVoJUq0EoVaKUKtFIFWqkCrVh6khV534OqPkYr8IvhgzV3TDY5AqWHaIEtuqap9a7NLtAP+KQYp6I27lYuusz03lFqA1N8R0tVSuCaia2xGRDf65hBSKAk/zPn3QL2Yx+46E30RfyG+Afvi0b+6ZIqdgAAAABJRU5ErkJggg==)}
 .cell .lbl{position:absolute;left:6px;right:6px;bottom:10px;text-align:center;font-weight:600;font-size:clamp(10px,2.2vw,13px);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell .lbl.dim{color:var(--faint)}
 .cell .badge{position:absolute;top:6px;right:6px;padding:1px 8px;border-radius:9px;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border:1px solid var(--faint);color:var(--muted);background:rgba(255,255,255,.04)}
@@ -256,7 +258,7 @@ function buildGrid(){const L=S.layout||{session_cells:6};const n=Math.min(L.sess
  const u=[['PT / EN','u-lang'],['brilho','u-bri'],['status','u-st']];
  u.forEach(([t,id])=>{const d=el('div','cell util');d.innerHTML='<div class="lbl">'+t+'</div><div class="sub"><span class="chip" id="'+id+'"></span></div>';if(id==='u-st')d.onclick=infoMenu;else d.title='local ao deck (config.toml [deck])';deck.appendChild(d)});
  stripEl('<i class="clowmask"></i><b>CLOW DECK</b><span id="ble"><i class="dot"></i></span>')}
-function buildSession(){const c=(S.cells||[])[pageCell]||{};const t=pageCell;const cdx=!!c.codex;gridShape();
+function buildSession(){const c=(S.cells||[])[pageCell]||{};const t=pageCell;const cdx=!!(c.codex||c.opencode);gridShape();
  mkcell('&lt; voltar','back',()=>goto2('grid'));
  mkcell('focar','accent',()=>send('action',t,'focus'));
  if(cdx)mkcell('aprovar','ok',()=>send('action',t,'approve'));
@@ -273,7 +275,7 @@ function buildSession(){const c=(S.cells||[])[pageCell]||{};const t=pageCell;con
  stripEl('<div class="sinfo"><b>'+(c.label||'')+'</b><span id="sst" class="st"></span><span id="sinfo2"></span></div><i id="smasc" class="masc big"></i><span id="ble"><i class="dot"></i></span>');
 }
 let cmdPage=0;
-function buildCmd(){gridShape();const t=pageCell;const c=(S.cells||[])[t]||{};const cdx=!!c.codex;
+function buildCmd(){gridShape();const t=pageCell;const c=(S.cells||[])[t]||{};const cdx=!!(c.codex||c.opencode);
  mkcell('&lt; voltar','back',()=>{cmdPage=0;goto2('session')});
  const items=[
   {l:cdx?'/new':'/clear',cls:'danger',fn:()=>{if(confirm('Confirmar '+(cdx?'/new':'/clear')+'?'))send('action',t,'clear')}},
@@ -289,13 +291,13 @@ function render(){const key=JSON.stringify([S.layout||{},page,pageCell]);
  if(page==='grid'){const cells=deck.querySelectorAll('.cell:not(.util)');const n=cells.length;
   for(let i=0;i<n;i++){const c=S.cells[i],d=cells[i];const st=c.sid?c.state_name:'empty';d.className='cell '+st+(c.active?' active':'')+(st==='done'&&c.age_s<60?' fresh':'');
    if(!c.sid){d.innerHTML='<div class="lbl dim">---</div>';continue}
-   d.innerHTML='<span class="age">'+((c.state_name==='done'||c.state_name==='attention')?fmtAge(c.age_s):'')+'</span><span class="badge">'+(c.codex?'CDX':(c.no_hooks?'sem hooks':(c.mode_name!=='--'?c.mode_name:'')))+'</span><i class="masc '+(c.codex?'mcodex':'mclaude')+'"></i><div class="lbl" title="'+(c.cwd||'')+' · '+c.state_name+' · '+fmtAge(c.age_s)+'">'+c.label+'</div>'}
+   d.innerHTML='<span class="age">'+((c.state_name==='done'||c.state_name==='attention')?fmtAge(c.age_s):'')+'</span><span class="badge">'+(c.opencode?'OC':c.codex?'CDX':(c.no_hooks?'sem hooks':(c.mode_name!=='--'?c.mode_name:'')))+'</span><i class="masc '+(c.opencode?'moc':c.codex?'mcodex':'mclaude')+'"></i><div class="lbl" title="'+(c.cwd||'')+' · '+c.state_name+' · '+fmtAge(c.age_s)+'">'+c.label+'</div>'}
   const dk=S.deck||{};document.getElementById('u-lang').textContent=dk.lang===1?'EN':'PT';document.getElementById('u-bri').textContent=Math.round((dk.brightness||0)/255*100)+'%';
   document.getElementById('u-st').textContent=S.ble.enabled?(S.ble.connected?'deck ok':'sem deck'):'web'}
  else if(page==='session'){const c=(S.cells||[])[pageCell];if(!c||!c.sid){goto2('grid');return}
   const st=document.getElementById('sst');if(st){st.textContent=c.state_name;st.className='st '+c.state_name}
   const si=document.getElementById('sinfo2');if(si)si.textContent=(c.mode_name!=='--'?c.mode_name+' · ':'')+fmtAge(c.age_s)+' · célula '+(pageCell+1)+(c.active?' · ativa':'');
-  const m=document.getElementById('smasc');if(m)m.className='masc big '+(c.codex?'mcodex':'mclaude')+' '+c.state_name}
+  const m=document.getElementById('smasc');if(m)m.className='masc big '+(c.opencode?'moc':c.codex?'mcodex':'mclaude')+' '+c.state_name}
  const bl=document.getElementById('ble');if(bl){bl.innerHTML='<i class="dot '+(S.ble.connected?'on':'')+'"></i>';bl.title=S.ble.enabled?(S.ble.connected?'deck: '+S.ble.device:'procurando deck'):'BLE off'}
  if(S.ble.hint&&S.ble.hint!==lastHint){say('aviso: '+S.ble.hint);lastHint=S.ble.hint}}
 async function refresh(){try{Object.assign(S,await (await fetch('/state')).json());render()}catch(e){say('agente fora do ar')}}

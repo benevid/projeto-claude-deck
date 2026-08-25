@@ -150,13 +150,18 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
         .map(|(_, s)| (Some(s.engine), s.codex_thread.clone()))
         .unwrap_or((None, None));
     let is_codex = engine == Some(Engine::Codex);
+    let is_oc = engine == Some(Engine::Opencode);
     match a {
         Action::Focus => focus_cell(st, cell).await.map(|(i, r)| format!("foco celula {i}: {r}")),
         Action::ModeCycle => {
             if is_codex {
                 anyhow::bail!("modo: indisponivel em sessao Codex (mude com /approvals no TUI)");
+            } else if is_oc {
+                // no opencode, Tab alterna o agente/modo (build <-> plan)
+                inject_after_focus(st, cell, "Tab (modo do opencode)", |i| i.key(KeyAction::Tab)).await
+            } else {
+                inject_after_focus(st, cell, "Shift+Tab (modo)", |i| i.key(KeyAction::ShiftTab)).await
             }
-            inject_after_focus(st, cell, "Shift+Tab (modo)", |i| i.key(KeyAction::ShiftTab)).await
         }
         Action::Compact => {
             if is_codex {
@@ -169,6 +174,8 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
             if is_codex {
                 // o equivalente do /clear no Codex e /new
                 codex_send(st, cell, codex_thread, "/new", "/new").await
+            } else if is_oc {
+                inject_after_focus(st, cell, "/new", |i| i.submit("/new")).await
             } else {
                 inject_after_focus(st, cell, "/clear", |i| i.submit("/clear")).await
             }
@@ -177,9 +184,14 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
         Action::Enter => inject_after_focus(st, cell, "Enter", |i| i.key(KeyAction::Enter)).await,
         Action::Tab => inject_after_focus(st, cell, "Tab (aceitar sugestao)", |i| i.key(KeyAction::Tab)).await,
         Action::Approve => {
-            // aprova o pedido pendente na TUI: codex usa 'y', claude usa '1'
-            let key = if is_codex { "y" } else { "1" };
-            inject_after_focus(st, cell, &format!("aprovar ('{key}')"), move |i| i.text(key)).await
+            // aprova o pedido pendente na TUI: codex 'y'; claude '1';
+            // opencode: Enter confirma a opcao padrao (allow) do dialogo
+            if is_oc {
+                inject_after_focus(st, cell, "aprovar (Enter)", |i| i.key(KeyAction::Enter)).await
+            } else {
+                let key = if is_codex { "y" } else { "1" };
+                inject_after_focus(st, cell, &format!("aprovar ('{key}')"), move |i| i.text(key)).await
+            }
         }
         Action::Init => {
             // /init existe nos dois engines (claude: CLAUDE.md; codex: AGENTS.md)
@@ -316,8 +328,8 @@ async fn voice_start(st: &Shared, cell: u8) -> Result<String> {
     // Caminho rapido: a sessao ja e a ativa e o app dela esta na frente -> nao refoca
     // (o foco completo custa ~1 s, que era descontado do tempo de gravacao).
     let (idx0, s0) = session_at(st, cell)?;
-    if s0.engine == Engine::Codex {
-        anyhow::bail!("voz: o /voice e do Claude Code — indisponivel em sessao Codex");
+    if s0.engine != Engine::Claude {
+        anyhow::bail!("voz: o /voice e do Claude Code — indisponivel em sessao {:?}", s0.engine);
     }
     let already_front = st.model().active_cell() == Some(idx0)
         && crate::focus::frontmost_app_name().as_deref() == Some(terminal_front_name(s0.terminal_app))

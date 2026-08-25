@@ -802,12 +802,12 @@ static void grid_apply() {
     lv_label_set_text(c.lbl, occ ? e.label : "---");
     lv_obj_set_style_text_decor(c.lbl, e.state == SS_DEAD ? LV_TEXT_DECOR_STRIKETHROUGH : LV_TEXT_DECOR_NONE, 0);
     lv_obj_set_style_bg_color(c.dot, lv_color_hex(state_color(e.state)), 0);
-    lv_image_set_src(c.masc, (e.flags & 4) ? &ic_codexlogo_4 : &ic_claude_4);
+    lv_image_set_src(c.masc, (e.flags & 8) ? &ic_oclogo_4 : (e.flags & 4) ? &ic_codexlogo_4 : &ic_claude_4);
     if (occ) {
       lv_obj_clear_flag(c.dot, LV_OBJ_FLAG_HIDDEN);
       lv_obj_clear_flag(c.chip, LV_OBJ_FLAG_HIDDEN);
       lv_obj_clear_flag(c.masc, LV_OBJ_FLAG_HIDDEN);
-      lv_label_set_text(c.chipLbl, (e.flags & 4) ? "CDX" : (e.flags & 2) ? TRS("sem hooks", "no hooks") : mode_name(e.mode));
+      lv_label_set_text(c.chipLbl, (e.flags & 8) ? "OC" : (e.flags & 4) ? "CDX" : (e.flags & 2) ? TRS("sem hooks", "no hooks") : mode_name(e.mode));
       lv_obj_set_style_opa(c.box, e.state == SS_DEAD ? 140 : 255, 0);
     } else {
       lv_obj_add_flag(c.dot, LV_OBJ_FLAG_HIDDEN);
@@ -961,7 +961,7 @@ static void ui_session() {
   uint8_t c = (uint8_t)g_selCell;
   back_cell(scr, ST_GRID);
   cell_btn(scr, 1, &ic_focus_4,   TRS("focar", "focus"),   C_ACCENT, act_btn_cb, (void *)(intptr_t)PL(ACT_FOCUS, c));
-  bool cdx = (g_model.s[g_selCell].flags & 4) != 0;    // sessao Codex (M6)
+  bool cdx = (g_model.s[g_selCell].flags & 0x0C) != 0; // engine externo (Codex/opencode): sem /voice, com aprovar/negar
   if (cdx) {
     // sem /voice no Codex: a celula vira APROVAR (pedido pendente -> 'y' no TUI)
     cell_btn(scr, 2, &ic_ack_4, TRS("aprovar", "approve"), C_DONE, act_btn_cb, (void *)(intptr_t)PL(ACT_APPROVE, c));
@@ -993,7 +993,7 @@ static void ui_session() {
   g_sess.info = g_strip.l2;
   lv_obj_set_pos(g_sess.info, 0, 56);
   lv_obj_set_width(g_sess.info, 170);
-  lv_obj_t *m = icon(s, (g_model.s[g_selCell].flags & 4) ? &ic_codexlogo_2 : &ic_claude_2,
+  lv_obj_t *m = icon(s, (g_model.s[g_selCell].flags & 8) ? &ic_oclogo_2 : (g_model.s[g_selCell].flags & 4) ? &ic_codexlogo_2 : &ic_claude_2,
                      state_color(g_model.s[g_selCell].state), 190);
   lv_obj_align(m, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
   session_apply();

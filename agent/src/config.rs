@@ -22,6 +22,7 @@ pub struct Config {
     pub deck: DeckCfg,
     pub focus: FocusCfg,
     pub codex: CodexCfg,
+    pub opencode: OpencodeCfg,
     pub commands: Vec<CommandCfg>,
 }
 
@@ -37,6 +38,18 @@ pub struct CodexCfg {
 impl Default for CodexCfg {
     fn default() -> Self {
         CodexCfg { enabled: true, poll_s: 5 }
+    }
+}
+
+/// Integracao com o opencode (M7): estados via o event-log sqlite dele.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OpencodeCfg {
+    pub enabled: bool,
+}
+impl Default for OpencodeCfg {
+    fn default() -> Self {
+        OpencodeCfg { enabled: true }
     }
 }
 
@@ -94,6 +107,7 @@ impl Default for Config {
             deck: DeckCfg::default(),
             focus: FocusCfg::default(),
             codex: CodexCfg::default(),
+            opencode: OpencodeCfg::default(),
             commands: vec![
                 CommandCfg { label: "voice".into(), text: "/voice".into(), confirm: false },
                 CommandCfg { label: "continue".into(), text: "continue".into(), confirm: false },

@@ -109,6 +109,9 @@ there (`CLAUDECODE` must be unset to start a nested session).
   (MUST pass explicit `sourceKinds`), maps thread status/updatedAt to session states for
   processes the discovery classified as `Engine::Codex` (flags bit2 → deck chip "CDX").
   Threads loaded in another process read as `notLoaded` — study in `docs/CODEX-INTEGRATION.md`.
+- `opencode.rs` — M7: live states for opencode sessions by polling its sqlite event log
+  (`~/.local/share/opencode/opencode.db`, system `sqlite3 -json`, rowid offset); engine
+  flag bit3 → chip "OC". Actions per engine in dispatch (mode=Tab, /new, /init, approve=Enter).
 - `dispatch.rs` — EVENT semantics (§4.3): tap on an occupied cell = focus + active + DONE→IDLE;
   actions; DECK/HELLO → immediate push. **Voice is Claude Code's `/voice`**: `VOICE_START(cell)`
   = focus + press-and-hold the space bar (`KeyAction::SpaceDown`), `VOICE_STOP` = release

@@ -69,7 +69,7 @@ fn apply_thread(st: &Shared, threads: &mut HashMap<String, String>, seen: &mut H
     } else {
         cwd
     };
-    if st.model().apply_codex_state(&cwd, state).is_some() {
+    if st.model().apply_engine_state(crate::model::Engine::Codex, &cwd, state).is_some() {
         st.notify_changed();
     }
 }
@@ -83,7 +83,7 @@ fn handle_notification(st: &Shared, threads: &mut HashMap<String, String>, metho
         "thread/status/changed" => {
             if let (Some(cwd), Some(status)) = (thread_cwd(threads, params), params.get("status")) {
                 if let Some(state) = map_status(status) {
-                    if st.model().apply_codex_state(&cwd, state).is_some() {
+                    if st.model().apply_engine_state(crate::model::Engine::Codex, &cwd, state).is_some() {
                         st.notify_changed();
                     }
                 }
@@ -91,21 +91,21 @@ fn handle_notification(st: &Shared, threads: &mut HashMap<String, String>, metho
         }
         "turn/started" => {
             if let Some(cwd) = thread_cwd(threads, params) {
-                if st.model().apply_codex_state(&cwd, State::Working).is_some() {
+                if st.model().apply_engine_state(crate::model::Engine::Codex, &cwd, State::Working).is_some() {
                     st.notify_changed();
                 }
             }
         }
         "turn/completed" => {
             if let Some(cwd) = thread_cwd(threads, params) {
-                if st.model().apply_codex_state(&cwd, State::Done).is_some() {
+                if st.model().apply_engine_state(crate::model::Engine::Codex, &cwd, State::Done).is_some() {
                     st.notify_changed();
                 }
             }
         }
         "item/commandExecution/requestApproval" | "item/fileChange/requestApproval" | "item/permissions/requestApproval" => {
             if let Some(cwd) = thread_cwd(threads, params) {
-                if st.model().apply_codex_state(&cwd, State::Attention).is_some() {
+                if st.model().apply_engine_state(crate::model::Engine::Codex, &cwd, State::Attention).is_some() {
                     st.notify_changed();
                 }
             }
@@ -275,7 +275,7 @@ async fn run_rollout_tail(st: Shared) {
                 });
             }
             if let Some(state) = state {
-                if st.model().apply_codex_state(cwd, state).is_some() {
+                if st.model().apply_engine_state(crate::model::Engine::Codex, cwd, state).is_some() {
                     st.notify_changed();
                 }
             }

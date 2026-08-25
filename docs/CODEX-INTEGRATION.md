@@ -98,3 +98,23 @@ plano B abaixo.
 - Sessoes TUI fora do daemon (ver questao aberta) → fallback por teclas ja validado.
 - `state_5.sqlite` bloqueado para leitura externa — nao depender de sqlite, so do
   protocolo.
+
+
+# opencode (M7) — implementado 2026-08-25
+
+Mesmo padrao do M6, com fonte de eventos ainda melhor: o opencode faz **event-sourcing
+em sqlite** (`~/.local/share/opencode/opencode.db`): tabela `event` (type/data JSON com
+`sessionID`), `session` (com `directory` = cwd) e `permission` (aprovacoes). Leitura
+`-readonly` no banco VIVO funciona sem conflito (WAL).
+
+- `agent/src/opencode.rs`: poll de 1,5 s por rowid via o `sqlite3 -json` do sistema
+  (zero dependencias novas); `message.part.updated`->WORKING, `message.updated`
+  (assistant + time.completed)->DONE, eventos/linhas de `permission`->ATTENTION
+  (permission sem vinculo de sessao no schema: melhor esforco = sessao mais recente).
+- Descoberta: binario `opencode` com TTY, excluindo os subcomandos de servico
+  (serve/acp/run/db/...). Flag de entrada **bit3 = EF_OPENCODE**; chip "OC"; logo
+  oficial (lobehub) como marca d'agua, no firmware e no deck virtual.
+- Acoes por engine: MODO -> tecla **Tab** (alterna build/plan no opencode);
+  /clear -> `/new`; `/init` -> AGENTS.md; APROVAR -> **Enter** (confirma a opcao
+  padrao do dialogo de permissao — VALIDAR na 1a aprovacao real); NEGAR -> Esc;
+  voz bloqueada (recurso do Claude Code).
