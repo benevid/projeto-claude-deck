@@ -181,6 +181,14 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
             let key = if is_codex { "y" } else { "1" };
             inject_after_focus(st, cell, &format!("aprovar ('{key}')"), move |i| i.text(key)).await
         }
+        Action::Init => {
+            // /init existe nos dois engines (claude: CLAUDE.md; codex: AGENTS.md)
+            if is_codex {
+                codex_send(st, cell, codex_thread, "/init", "/init").await
+            } else {
+                inject_after_focus(st, cell, "/init", |i| i.submit("/init")).await
+            }
+        }
         Action::Ack => {
             let (idx, _) = session_at(st, cell)?;
             st.model().ack(idx);

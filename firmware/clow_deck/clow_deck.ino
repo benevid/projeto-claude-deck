@@ -980,9 +980,9 @@ static void ui_session() {
     cell_btn(scr, 3, &ic_mode_4,  TRS("modo", "mode"),     C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_MODE_CYCLE, c));
   cell_btn(scr, 4, &ic_esc_4,     "esc",                   C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_ESC, c));
   cell_btn(scr, 5, &ic_enter_4,   "enter",                 C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_ENTER, c));
-  cell_btn(scr, 6, &ic_compact_4, "/compact",              C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_COMPACT, c));
-  cell_btn(scr, 7, &ic_clear_4,   "/clear",                C_ERR,  act_btn_cb, (void *)(intptr_t)(PL(ACT_CLEAR, c) | PL_CONFIRM));
-  cell_btn(scr, 8, &ic_tab_4,     "tab",                   C_DONE, act_btn_cb, (void *)(intptr_t)PL(ACT_TAB, c));
+  cell_btn(scr, 6, &ic_tab_4,     "tab",                   C_DONE, act_btn_cb, (void *)(intptr_t)PL(ACT_TAB, c));
+  cell_btn(scr, 7, &ic_compact_4, "/compact",              C_TEXT, act_btn_cb, (void *)(intptr_t)PL(ACT_COMPACT, c));
+  cell_btn(scr, 8, &ic_next_4,    TRS("mais", "more"),     C_MUTED, nav_cb, (void *)(intptr_t)ST_CMD);
 
   lv_obj_t *s = strip(scr);
   g_sess.title = g_strip.l1;
@@ -993,8 +993,6 @@ static void ui_session() {
   g_sess.info = g_strip.l2;
   lv_obj_set_pos(g_sess.info, 0, 56);
   lv_obj_set_width(g_sess.info, 170);
-  lv_obj_t *cmd = strip_btn(s, &ic_cmd_2, "cmd", C_ACCENT, nav_cb, (void *)(intptr_t)ST_CMD);
-  lv_obj_align(cmd, LV_ALIGN_TOP_RIGHT, 0, 0);
   lv_obj_t *m = icon(s, (g_model.s[g_selCell].flags & 4) ? &ic_codexlogo_2 : &ic_claude_2,
                      state_color(g_model.s[g_selCell].state), 190);
   lv_obj_align(m, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
@@ -1011,12 +1009,11 @@ static void ui_cmd() {
   back_cell(scr, (g_selCell >= 0 && cell_occupied(g_selCell)) ? ST_SESSION : ST_GRID);
 
   struct Item { const lv_image_dsc_t *ic; const char *t; uint32_t col, pl; };
-  Item items[4 + DECK_CUSTOM_MAX];
+  // so o que NAO esta na pagina da sessao (sem repetir) + /init + customs
+  Item items[2 + DECK_CUSTOM_MAX];
   int n = 0;
-  items[n++] = { &ic_esc_4,     "esc",      C_TEXT, PL(ACT_ESC, target) };
-  items[n++] = { &ic_enter_4,   "enter",    C_TEXT, PL(ACT_ENTER, target) };
-  items[n++] = { &ic_compact_4, "/compact", C_TEXT, PL(ACT_COMPACT, target) };
-  items[n++] = { &ic_clear_4,   "/clear",   C_ERR,  PL(ACT_CLEAR, target) | PL_CONFIRM };
+  items[n++] = { &ic_clear_4, "/clear", C_ERR,    PL(ACT_CLEAR, target) | PL_CONFIRM };
+  items[n++] = { &ic_cmd_4,   "/init",  C_ACCENT, PL(ACT_INIT, target) };
   for (int i = 0; i < g_customN; i++)
     items[n++] = { &ic_cmd_4, g_custom[i].label, C_ACCENT,
                    PL(ACT_CUSTOM_BASE + i, target) | (g_custom[i].confirm ? PL_CONFIRM : 0) };

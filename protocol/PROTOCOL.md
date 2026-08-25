@@ -185,6 +185,7 @@ Acoes (`kind = ACTION`):
 | `0x15` | `ACK` | marca `DONE` → `IDLE` sem focar | nao |
 | `0x16` | `TAB` | tecla `Tab` (aceita a sugestao/auto-complete do terminal) | nao |
 | `0x17` | `APPROVE` | aprova o pedido pendente (codex: tecla `y`; claude: tecla `1`) | nao |
+| `0x18` | `INIT` | digita `/init` (claude gera CLAUDE.md; codex gera AGENTS.md) | nao |
 | `0x20` | `VOICE_START` | foca a sessao-alvo (`cell` = 0..`session_cells`-1; `0xFF` = ativa) e **pressiona a barra de espaco** — com `/voice` ligado na sessao, o Claude Code grava enquanto o espaco estiver segurado (demora 2–3 s p/ comecar) | nao |
 | `0x21` | `VOICE_STOP` | solta o espaco: o Claude transcreve e deixa o texto no prompt esperando `ENTER` (nao envia Enter sozinho) | nao |
 | `0x22` | `VOICE_CANCEL` | solta o espaco + `Esc` (descarta) | nao |

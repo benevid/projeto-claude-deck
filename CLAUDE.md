@@ -162,7 +162,7 @@ there (`CLAUDECODE` must be unset to start a nested session).
   **zeroes every cached `lv_obj_t*`**, rebuilds), screens SEARCH / GRID / SESSION / CMD / SETTINGS /
   ABOUT, overlays (passkey, confirm) in `lv_layer_top()`, all animation procedural from `loop()`.
   SESSIONS updates the grid **in place**; only a screen change rebuilds. Session page = 9 cell
-  buttons (back, focus, voice hold, mode, esc, enter, /compact, /clear, tab); voice push-to-talk
+  buttons (back, focus, voice hold|approve, mode|deny, esc, enter, tab, /compact, `>` to the CMD page — which holds ONLY what page 1 doesn't: /clear|/new, /init (0x18) and the custom commands, paginated `<`/`>`); voice push-to-talk
   sends `VOICE_START/STOP` with the session's cell as target.
 - **Render is `LV_DISPLAY_RENDER_MODE_PARTIAL`** (`DECK_RENDER_PARTIAL 1`): a 320×40 strip in
   internal RAM; the flush copies only the dirty area into the PSRAM canvas and calls

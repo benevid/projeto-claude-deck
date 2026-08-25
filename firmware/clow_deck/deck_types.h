@@ -63,6 +63,7 @@ struct CustomCmd {
 #define ACT_ACK          0x15
 #define ACT_TAB          0x16
 #define ACT_APPROVE      0x17
+#define ACT_INIT         0x18
 #define ACT_VOICE_START  0x20
 #define ACT_VOICE_STOP   0x21
 #define ACT_VOICE_CANCEL 0x22

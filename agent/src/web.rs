@@ -267,14 +267,22 @@ function buildSession(){const c=(S.cells||[])[pageCell]||{};const t=pageCell;con
  if(cdx)mkcell('negar','danger',()=>send('action',t,'esc'));else mkcell('modo',null,()=>send('action',t,'mode_cycle'));
  mkcell('esc',null,()=>send('action',t,'esc'));
  mkcell('enter',null,()=>send('action',t,'enter'));
- mkcell('/compact',null,()=>send('action',t,'compact'));
- mkcell(cdx?'/new':'/clear','danger',()=>{if(confirm('Confirmar '+(cdx?'/new':'/clear')+'?'))send('action',t,'clear')});
  mkcell('tab','ok',()=>send('action',t,'tab'));
- stripEl('<div class="sinfo"><b>'+(c.label||'')+'</b><span id="sst" class="st"></span><span id="sinfo2"></span></div><i id="smasc" class="masc big"></i><button id="scmd">CMD</button><span id="ble"><i class="dot"></i></span>');
- document.getElementById('scmd').onclick=()=>goto2('cmd')}
-function buildCmd(){gridShape();const t=pageCell;
- mkcell('&lt; voltar','back',()=>goto2('session'));
- (S.commands||[]).slice(0,11).forEach((cm,i)=>mkcell((cm.confirm?'! ':'')+cm.label,null,()=>{if(cm.confirm&&!confirm('Confirmar '+cm.label+'?'))return;send('action',t,'custom_'+i)}));
+ mkcell('/compact',null,()=>send('action',t,'compact'));
+ mkcell('&gt; mais','back',()=>goto2('cmd'));
+ stripEl('<div class="sinfo"><b>'+(c.label||'')+'</b><span id="sst" class="st"></span><span id="sinfo2"></span></div><i id="smasc" class="masc big"></i><span id="ble"><i class="dot"></i></span>');
+}
+let cmdPage=0;
+function buildCmd(){gridShape();const t=pageCell;const c=(S.cells||[])[t]||{};const cdx=!!c.codex;
+ mkcell('&lt; voltar','back',()=>{cmdPage=0;goto2('session')});
+ const items=[
+  {l:cdx?'/new':'/clear',cls:'danger',fn:()=>{if(confirm('Confirmar '+(cdx?'/new':'/clear')+'?'))send('action',t,'clear')}},
+  {l:'/init',cls:'accent',fn:()=>send('action',t,'init')}];
+ (S.commands||[]).forEach((cm,i)=>items.push({l:(cm.confirm?'! ':'')+cm.label,cls:null,fn:()=>{if(cm.confirm&&!confirm('Confirmar '+cm.label+'?'))return;send('action',t,'custom_'+i)}}));
+ const per=7;const start=cmdPage*per;const more=(start+per)<items.length;
+ items.slice(start,start+per).forEach(it=>mkcell(it.l,it.cls,it.fn));
+ for(let k=items.slice(start,start+per).length;k<per;k++)deck.appendChild(el('div','cell empty','<div class="lbl dim">---</div>'));
+ if(more)mkcell('&gt; mais','back',()=>{cmdPage++;builtKey='';render()});else deck.appendChild(el('div','cell empty','<div class="lbl dim">---</div>'));
  stripEl('<i class="clowmask"></i><b>COMANDOS</b><span id="ble"><i class="dot"></i></span>')}
 function render(){const key=JSON.stringify([S.layout||{},page,pageCell]);
  if(key!==builtKey){if(page==='session')buildSession();else if(page==='cmd')buildCmd();else buildGrid();builtKey=key}
