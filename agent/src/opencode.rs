@@ -2,10 +2,10 @@
 //!
 //! O opencode grava um log de eventos em `~/.local/share/opencode/opencode.db`
 //! (tabela `event`: seq/type/data-JSON com sessionID; tabela `session` tem o
-//! `directory` = cwd; tabela `permission` = pedidos de aprovacao). Leitura
-//! `-readonly` no banco vivo funciona sem conflito (WAL). Poll por rowid via o
-//! sqlite3 do sistema (`-json`) — zero dependencias novas. Offset comeca no fim
-//! (so eventos novos). Acoes continuam por teclado (dispatch por engine).
+//! `directory` = cwd). Leitura read-only no banco vivo funciona sem conflito (WAL).
+//! Poll por rowid com `rusqlite` (SQLite embutido — cross-platform, o Windows nao
+//! tem `sqlite3` no PATH). Offset comeca no fim (so eventos novos). Acoes continuam
+//! por teclado (dispatch por engine).
 
 use crate::app::Shared;
 use crate::model::Engine;
@@ -18,23 +18,42 @@ fn db_path() -> Option<std::path::PathBuf> {
     directories::BaseDirs::new().map(|b| b.home_dir().join(".local/share/opencode/opencode.db"))
 }
 
+/// Roda um SELECT read-only e devolve as linhas como objetos JSON (colunas -> valor).
+/// Bloqueante: sempre chamada dentro de `spawn_blocking`.
+fn query_blocking(db: &std::path::Path, sql: &str) -> Option<Vec<Value>> {
+    use rusqlite::{Connection, OpenFlags};
+    let conn = Connection::open_with_flags(
+        db,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .ok()?;
+    let mut stmt = conn.prepare(sql).ok()?;
+    let cols: Vec<String> = stmt.column_names().into_iter().map(String::from).collect();
+    let rows = stmt
+        .query_map([], |row| {
+            let mut obj = serde_json::Map::new();
+            for (i, name) in cols.iter().enumerate() {
+                let v = match row.get_ref(i) {
+                    Ok(rusqlite::types::ValueRef::Null) => Value::Null,
+                    Ok(rusqlite::types::ValueRef::Integer(n)) => Value::from(n),
+                    Ok(rusqlite::types::ValueRef::Real(f)) => Value::from(f),
+                    Ok(rusqlite::types::ValueRef::Text(t)) => Value::from(String::from_utf8_lossy(t).to_string()),
+                    Ok(rusqlite::types::ValueRef::Blob(_)) | Err(_) => Value::Null,
+                };
+                obj.insert(name.clone(), v);
+            }
+            Ok(Value::Object(obj))
+        })
+        .ok()?
+        .filter_map(|r| r.ok())
+        .collect();
+    Some(rows)
+}
+
 async fn query_json(db: &std::path::Path, sql: &str) -> Option<Vec<Value>> {
-    let out = tokio::process::Command::new("sqlite3")
-        .args(["-readonly", "-json"])
-        .arg(db)
-        .arg(sql)
-        .output()
-        .await
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    let txt = String::from_utf8_lossy(&out.stdout);
-    let t = txt.trim();
-    if t.is_empty() {
-        return Some(Vec::new());
-    }
-    serde_json::from_str::<Vec<Value>>(t).ok()
+    let db = db.to_path_buf();
+    let sql = sql.to_string();
+    tokio::task::spawn_blocking(move || query_blocking(&db, &sql)).await.ok()?
 }
 
 async fn max_rowid(db: &std::path::Path, table: &str) -> i64 {

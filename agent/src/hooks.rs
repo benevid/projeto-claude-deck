@@ -292,7 +292,13 @@ mod tests {
         assert_eq!(stop.len(), 2, "alheio + nosso");
         assert_eq!(stop[0]["hooks"][0]["command"], "echo foreign");
         assert!(is_ours(stop[1]["hooks"][0]["command"].as_str().unwrap()));
-        assert!(stop[1]["hooks"][0]["command"].as_str().unwrap().contains("/hook/Stop?pid=$PPID"));
+        let cmd = stop[1]["hooks"][0]["command"].as_str().unwrap();
+        // o comando difere por SO: POSIX casa por $PPID, Windows por cwd (sem PPID no shell)
+        if cfg!(windows) {
+            assert!(cmd.contains("/hook/Stop?") && cmd.contains(MARKER), "cmd: {cmd}");
+        } else {
+            assert!(cmd.contains("/hook/Stop?pid=$PPID"), "cmd: {cmd}");
+        }
         let st = status(&p).unwrap();
         assert!(st.missing_events.is_empty());
         assert_eq!(st.port, Some(47831));

@@ -23,8 +23,15 @@ pub trait Injector {
     /// Texto + Enter (comandos `/compact`, prompts prontos).
     fn submit(&mut self, s: &str) -> Result<()> {
         self.text(s)?;
-        std::thread::sleep(Duration::from_millis(80));
+        // 80 ms era pouco no macOS: o TUI ainda estava processando o texto e
+        // engolia o Enter (no Windows chegava a tempo) — comportamento diferente
+        // por SO, reportado na bancada.
+        std::thread::sleep(Duration::from_millis(280));
         self.key(KeyAction::Enter)
+    }
+    /// Digita sem enviar (config `auto_enter = false`: o usuario revisa e da Enter).
+    fn type_only(&mut self, s: &str) -> Result<()> {
+        self.text(s)
     }
 }
 

@@ -121,6 +121,11 @@ void BleLink::begin() {
 #if DECK_BLE_SECURE
   NimBLEDevice::setSecurityAuth(true, true, true);          // bond + MITM + SC
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);   // passkey na tela
+  // Distribuir TAMBEM a chave de identidade (IRK), nao so a de cifra: o padrao do
+  // NimBLE e so ENC, o macOS tolera e o Windows aborta o pareamento no meio
+  // ("tente conectar novamente" — visto na bancada com Win11).
+  NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+  NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
   // NAO chamar setSecurityPasskey(): o NimBLEServer so invoca onPassKeyDisplay() (que
   // liga o overlay na tela) quando o passkey estatico e o padrao 123456 — com um valor
   // fixo proprio o callback nunca roda e o usuario ve o dialogo do Mac sem codigo na

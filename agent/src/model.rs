@@ -16,6 +16,8 @@ pub enum TerminalApp {
     Alacritty,
     Kitty,
     WezTerm,
+    /// Windows Terminal / conhost / PowerShell / cmd (M4)
+    WindowsTerminal,
     Other,
 }
 
@@ -32,6 +34,7 @@ impl TerminalApp {
             TerminalApp::Alacritty => "Alacritty",
             TerminalApp::Kitty => "kitty",
             TerminalApp::WezTerm => "WezTerm",
+            TerminalApp::WindowsTerminal => "Windows Terminal",
             TerminalApp::Other => "outro",
         }
     }
@@ -68,6 +71,15 @@ impl TerminalApp {
         }
         if lc.contains("wezterm") {
             return Some(TerminalApp::WezTerm);
+        }
+        // Windows (M4)
+        if lc.contains("windowsterminal") || base == "conhost.exe" || base == "powershell.exe"
+            || base == "pwsh.exe" || base == "cmd.exe"
+        {
+            return Some(TerminalApp::WindowsTerminal);
+        }
+        if base == "code.exe" {
+            return Some(TerminalApp::VSCode);
         }
         None
     }
@@ -170,10 +182,15 @@ pub fn label_for(cwd: &str) -> String {
     if cwd.is_empty() {
         return "?".into();
     }
-    let trimmed = cwd.trim_end_matches('/');
-    let base = trimmed.rsplit('/').next().unwrap_or(trimmed);
+    // aceita separador POSIX e Windows (`C:\dev\proj\` -> "proj")
+    let trimmed = cwd.trim_end_matches(['/', '\\']);
+    let base = trimmed.rsplit(['/', '\\']).next().unwrap_or(trimmed);
     if base.is_empty() {
         return "/".into();
+    }
+    // raiz de volume no Windows ("C:") vira o nome do drive
+    if base.ends_with(':') {
+        return base.trim_end_matches(':').to_ascii_uppercase();
     }
     let l = ascii_label(base, LABEL_LEN);
     if l.is_empty() {
@@ -770,5 +787,10 @@ mod tests {
         assert_eq!(label_for("/Users/x/projeto-configuração"), "projeto-conf");
         assert_eq!(label_for("/"), "/");
         assert_eq!(label_for(""), "?");
+        // Windows (M4): separador `\` e barra final
+        assert_eq!(label_for("C:\\dev\\clowdeck"), "clowdeck");
+        assert_eq!(label_for("C:\\dev\\clowdeck\\"), "clowdeck");
+        assert_eq!(label_for("C:\\Users\\photobox\\"), "photobox");
+        assert_eq!(label_for("C:\\"), "C");
     }
 }

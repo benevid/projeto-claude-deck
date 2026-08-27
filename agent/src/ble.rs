@@ -71,8 +71,13 @@ async fn is_deck(p: &Peripheral) -> Option<String> {
 }
 
 /// Escaneia ate `timeout` procurando um deck (UUID do servico ou nome).
+///
+/// **Sem `ScanFilter` de servico**: no Windows (WinRT) o anuncio chega sem a lista de
+/// servicos (`services` vazio), entao filtrar no scan descarta o proprio deck — visto na
+/// bancada: `ble scan` (sem filtro, casa por nome) achava e `ble info` (com filtro) dizia
+/// "nenhum deck anunciando". O filtro real e o `is_deck()` abaixo, que aceita UUID **ou** nome.
 pub async fn find_deck(adapter: &Adapter, timeout: Duration) -> Result<Option<Found>> {
-    with_timeout(10, "start_scan", adapter.start_scan(ScanFilter { services: vec![SERVICE_UUID] })).await?;
+    with_timeout(10, "start_scan", adapter.start_scan(ScanFilter::default())).await?;
     let deadline = tokio::time::Instant::now() + timeout;
     let mut found = None;
     while tokio::time::Instant::now() < deadline {
@@ -89,6 +94,144 @@ pub async fn find_deck(adapter: &Adapter, timeout: Duration) -> Result<Option<Fo
     }
     let _ = with_timeout(5, "stop_scan", adapter.stop_scan()).await;
     Ok(found)
+}
+
+/// Pareamento pela API nativa do Windows (WinRT).
+///
+/// O btleplug nao pareia: no Windows o GATT so abre com o dispositivo pareado, e a tela
+/// de Ajustes se mostrou instavel na bancada (erro "tente conectar novamente"). Aqui o
+/// agente inicia o pareamento e responde o passkey que a PLACA mostra na tela
+/// (IO capability DisplayOnly: o deck exibe, o computador digita).
+#[cfg(target_os = "windows")]
+pub fn pair_blocking(addr: u64, pin: &str) -> Result<String> {
+    use windows::core::HSTRING;
+    use windows::Devices::Bluetooth::BluetoothLEDevice;
+    use windows::Devices::Enumeration::{
+        DevicePairingKinds, DevicePairingProtectionLevel, DevicePairingRequestedEventArgs, DevicePairingResultStatus,
+    };
+    use windows::Foundation::TypedEventHandler;
+
+    let dev = BluetoothLEDevice::FromBluetoothAddressAsync(addr)
+        .context("FromBluetoothAddressAsync")?
+        .get()
+        .context("abrindo o dispositivo BLE")?;
+    let info = dev.DeviceInformation().context("DeviceInformation")?;
+    let pairing = info.Pairing().context("Pairing")?;
+    if pairing.IsPaired().unwrap_or(false) {
+        return Ok("ja estava pareado".into());
+    }
+    let custom = pairing.Custom().context("Custom pairing")?;
+    let pin = pin.to_string();
+    // aceita QUALQUER cerimonia e informa qual o Windows escolheu (diagnostico):
+    // com IO DisplayOnly na placa o esperado e ProvidePin, mas a negociacao pode
+    // cair em ConfirmOnly (Just Works) ou ConfirmPinMatch dependendo do radio.
+    let token = custom
+        .PairingRequested(&TypedEventHandler::new(
+            move |_sender: &Option<windows::Devices::Enumeration::DeviceInformationCustomPairing>,
+                  args: &Option<DevicePairingRequestedEventArgs>| {
+                if let Some(args) = args.as_ref() {
+                    let kind = args.PairingKind().unwrap_or(DevicePairingKinds::None);
+                    println!("  cerimonia pedida pelo Windows: {kind:?}");
+                    let r = match kind {
+                        DevicePairingKinds::ProvidePin => {
+                            // sem passkey na linha de comando: a placa esta exibindo o
+                            // codigo AGORA (a cerimonia acabou de comecar) — pergunta.
+                            let code = if pin.is_empty() {
+                                use std::io::{BufRead, Write};
+                                print!("  >>> digite os 6 digitos que aparecem NA TELA DA PLACA e tecle Enter: ");
+                                let _ = std::io::stdout().flush();
+                                let mut line = String::new();
+                                let _ = std::io::stdin().lock().read_line(&mut line);
+                                line.trim().to_string()
+                            } else {
+                                pin.clone()
+                            };
+                            args.AcceptWithPin(&HSTRING::from(code.as_str()))
+                        }
+                        _ => args.Accept(),
+                    };
+                    if let Err(e) = r {
+                        println!("  falha ao responder a cerimonia: {e}");
+                    }
+                }
+                Ok(())
+            },
+        ))
+        .context("registrando PairingRequested")?;
+    let kinds = DevicePairingKinds::ConfirmOnly
+        | DevicePairingKinds::ProvidePin
+        | DevicePairingKinds::ConfirmPinMatch
+        | DevicePairingKinds::DisplayPin;
+    let mut res = custom
+        .PairWithProtectionLevelAsync(kinds, DevicePairingProtectionLevel::EncryptionAndAuthentication)
+        .context("PairWithProtectionLevelAsync")?
+        .get()
+        .context("aguardando pareamento")?;
+    let mut status = res.Status().unwrap_or(DevicePairingResultStatus::Failed);
+    if status != DevicePairingResultStatus::Paired && status != DevicePairingResultStatus::AlreadyPaired {
+        println!("  1a tentativa (EncryptionAndAuthentication): {status:?} — tentando so Encryption...");
+        res = custom
+            .PairWithProtectionLevelAsync(kinds, DevicePairingProtectionLevel::Encryption)
+            .context("PairWithProtectionLevelAsync (Encryption)")?
+            .get()
+            .context("aguardando pareamento (Encryption)")?;
+        status = res.Status().unwrap_or(DevicePairingResultStatus::Failed);
+    }
+    let _ = custom.RemovePairingRequested(token);
+    if status == DevicePairingResultStatus::Paired || status == DevicePairingResultStatus::AlreadyPaired {
+        Ok(format!("pareado ({status:?})"))
+    } else if status == DevicePairingResultStatus::AccessDenied {
+        anyhow::bail!(
+            "pareamento negado (AccessDenied): o Windows so pareia a partir de uma SESSAO DE DESKTOP. \
+             Rode este comando numa janela do PowerShell aberta na sua area de trabalho (nao por SSH/servico)."
+        )
+    } else if status == DevicePairingResultStatus::AuthenticationFailure {
+        anyhow::bail!("passkey incorreto — use os 6 digitos que a placa mostra na tela")
+    } else {
+        anyhow::bail!("pareamento falhou: {status:?}")
+    }
+}
+
+/// Acha o deck anunciando e pareia. `passkey` vazio = pergunta na hora (a placa so
+/// mostra o codigo depois que a cerimonia comeca).
+#[cfg(target_os = "windows")]
+pub async fn pair(passkey: &str) -> Result<()> {
+    let adapter = adapter(None).await?;
+    println!("procurando o deck...");
+    let found = find_deck(&adapter, Duration::from_secs(12))
+        .await?
+        .ok_or_else(|| anyhow!("nenhum deck anunciando"))?;
+    let addr = found.peripheral.address();
+    let raw = addr.into_inner();
+    let addr_u64 = raw.iter().fold(0u64, |acc, b| (acc << 8) | *b as u64);
+    println!("deck {} ({addr}) — pareando...", found.name);
+    let pin = passkey.to_string();
+    let r = tokio::task::spawn_blocking(move || pair_blocking(addr_u64, &pin)).await??;
+    println!("{r}");
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub async fn pair(_passkey: &str) -> Result<()> {
+    anyhow::bail!("`ble pair` e do Windows; no macOS o pareamento e disparado pelo proprio sistema")
+}
+
+/// `connect()` tolerante ao WinRT.
+///
+/// No Windows o `connect()` do btleplug espera o `ConnectionStatus` virar Connected, mas
+/// o WinRT so estabelece o link quando o GATT e acessado — o resultado e um
+/// "Not connected" mesmo com o deck ali (visto na bancada, inclusive com o firmware
+/// sem exigir pareamento). Nesses casos seguimos para `discover_services()`, que forca
+/// a conexao; se nem isso funcionar, o erro aparece la.
+async fn connect_tolerant(p: &Peripheral) -> Result<()> {
+    match with_timeout(20, "connect", p.connect()).await {
+        Ok(()) => Ok(()),
+        Err(e) if cfg!(target_os = "windows") => {
+            tracing::warn!("connect() reclamou ({e:#}) — WinRT conecta ao acessar o GATT; seguindo");
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
 }
 
 pub struct Chars {
@@ -173,7 +316,7 @@ async fn session(st: &Shared, adapter: &Adapter) -> Result<()> {
     let p = found.peripheral;
     tracing::info!("deck encontrado: {} — conectando", found.name);
     st.set_phase("connect");
-    with_timeout(20, "connect", p.connect()).await?;
+    connect_tolerant(&p).await?;
     let result = match tokio::time::timeout(Duration::from_secs(150), setup(st, adapter, &p, &found.name)).await {
         Err(_) => Err(anyhow!("setup da conexao nao terminou em 150 s (fase {})", st.phase())),
         Ok(Err(e)) => Err(e),
@@ -424,7 +567,7 @@ pub async fn info() -> Result<()> {
         anyhow::bail!("nenhum deck anunciando");
     };
     let p = found.peripheral;
-    with_timeout(20, "connect", p.connect()).await?;
+    connect_tolerant(&p).await?;
     let r: Result<()> = async {
         with_timeout(15, "discover_services", p.discover_services()).await?;
         let chars = chars_of(&p)?;

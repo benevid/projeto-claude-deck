@@ -107,6 +107,11 @@ enum BleCmd {
     },
     /// Conecta no deck, le INFO e desconecta
     Info,
+    /// (Windows) Pareia com o deck; sem argumento, pergunta o codigo na hora
+    Pair {
+        /// os 6 digitos exibidos na placa (opcional: sem isso, o comando pergunta)
+        passkey: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -130,6 +135,7 @@ async fn main() -> Result<()> {
         Cmd::Ble { cmd } => match cmd {
             BleCmd::Scan { secs } => ble::scan(secs).await,
             BleCmd::Info => ble::info().await,
+            BleCmd::Pair { passkey } => ble::pair(passkey.as_deref().unwrap_or("")).await,
         },
         Cmd::Doctor => doctor(&cfg).await,
         Cmd::Keybinding { cmd } => {
@@ -214,15 +220,26 @@ async fn focus_pid(pid: u32, cfg: &config::Config, dry_run: bool) -> Result<()> 
 }
 
 async fn doctor(cfg: &config::Config) -> Result<()> {
+    // `which` nao existe no Windows — la o equivalente e `where.exe`
     let has = |bin: &str| {
-        std::process::Command::new("which")
+        let finder = if cfg!(windows) { "where" } else { "which" };
+        std::process::Command::new(finder)
             .arg(bin)
             .output()
             .map(|o| o.status.success())
             .unwrap_or(false)
     };
     let mut rows: Vec<(String, bool, String)> = Vec::new();
-    rows.push(("curl".into(), has("curl"), "usado pelos hooks".into()));
+    let curl_bin = if cfg!(windows) { "curl.exe" } else { "curl" };
+    rows.push((curl_bin.into(), has(curl_bin), "usado pelos hooks".into()));
+    if cfg!(windows) {
+        let bt = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", "(Get-Service bthserv).Status -eq 'Running'"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "True")
+            .unwrap_or(false);
+        rows.push(("Bluetooth".into(), bt, "servico bthserv (BLE do deck)".into()));
+    }
     if cfg!(target_os = "macos") {
         rows.push(("lsof".into(), has("lsof"), "cwd das sessoes".into()));
         rows.push(("osascript".into(), has("osascript"), "foco de janela (AppleScript)".into()));

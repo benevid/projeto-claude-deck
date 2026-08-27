@@ -132,6 +132,31 @@ pub async fn handle_event(st: &Shared, ev: Event, source: &str) -> Result<String
     res
 }
 
+/// Digita um comando respeitando `auto_enter` da config (true = manda Enter).
+fn send_text(st: &Shared, text: String) -> impl FnOnce(&mut dyn Injector) -> Result<()> + Send + 'static {
+    let auto = st.cfg.auto_enter;
+    move |i: &mut dyn Injector| if auto { i.submit(&text) } else { i.type_only(&text) }
+}
+
+/// Comandos que so existem no Claude Code: em outro engine o TUI casa com o
+/// comando mais parecido (visto na bancada: `/voice` virou `/review` no opencode).
+fn claude_only_cmd(text: &str) -> Option<&'static str> {
+    let t = text.trim_start().to_ascii_lowercase();
+    for c in ["/voice", "/config", "/permissions", "/hooks", "/statusline", "/output-style"] {
+        if t == c || t.starts_with(&format!("{c} ")) {
+            return Some(match c {
+                "/voice" => "/voice",
+                "/config" => "/config",
+                "/permissions" => "/permissions",
+                "/hooks" => "/hooks",
+                "/statusline" => "/statusline",
+                _ => "/output-style",
+            });
+        }
+    }
+    None
+}
+
 /// M6.b: para sessao Codex com thread conhecido, envia texto via `codex queue`
 /// (sem focar janela); senao cai para o caminho de teclado.
 async fn codex_send(st: &Shared, cell: u8, thread: Option<String>, text: &str, what: &str) -> Result<String> {
@@ -167,7 +192,7 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
             if is_codex {
                 codex_send(st, cell, codex_thread, "/compact", "/compact").await
             } else {
-                inject_after_focus(st, cell, "/compact", |i| i.submit("/compact")).await
+                inject_after_focus(st, cell, "/compact", send_text(st, "/compact".into())).await
             }
         }
         Action::Clear => {
@@ -175,9 +200,9 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
                 // o equivalente do /clear no Codex e /new
                 codex_send(st, cell, codex_thread, "/new", "/new").await
             } else if is_oc {
-                inject_after_focus(st, cell, "/new", |i| i.submit("/new")).await
+                inject_after_focus(st, cell, "/new", send_text(st, "/new".into())).await
             } else {
-                inject_after_focus(st, cell, "/clear", |i| i.submit("/clear")).await
+                inject_after_focus(st, cell, "/clear", send_text(st, "/clear".into())).await
             }
         }
         Action::Esc => inject_after_focus(st, cell, "Esc", |i| i.key(KeyAction::Esc)).await,
@@ -203,7 +228,7 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
             if is_codex {
                 codex_send(st, cell, codex_thread, "/init", "/init").await
             } else {
-                inject_after_focus(st, cell, "/init", |i| i.submit("/init")).await
+                inject_after_focus(st, cell, "/init", send_text(st, "/init".into())).await
             }
         }
         Action::Ack => {
@@ -223,10 +248,19 @@ async fn action(st: &Shared, cell: u8, a: Action) -> Result<String> {
                 .cloned()
                 .ok_or_else(|| anyhow!("comando customizado {n} nao configurado ({})", st.config_path.display()))?;
             let text = cmd.text.clone();
+            if engine != Some(Engine::Claude) {
+                if let Some(c) = claude_only_cmd(&text) {
+                    anyhow::bail!(
+                        "'{}': {c} e um comando do Claude Code — em sessao {:?} o TUI casaria com outro comando (ex.: /review). Ignorado.",
+                        cmd.label,
+                        engine.unwrap_or(Engine::Claude)
+                    );
+                }
+            }
             if is_codex {
                 codex_send(st, cell, codex_thread, &text, &format!("custom '{}'", cmd.label)).await
             } else {
-                inject_after_focus(st, cell, &format!("custom '{}'", cmd.label), move |i| i.submit(&text)).await
+                inject_after_focus(st, cell, &format!("custom '{}'", cmd.label), send_text(st, text)).await
             }
         }
     }

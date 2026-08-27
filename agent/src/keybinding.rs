@@ -20,6 +20,7 @@ pub fn support_dir(editor: &str) -> &'static str {
 }
 
 pub fn path(support_dir: &str) -> Result<PathBuf> {
+    #[cfg_attr(target_os = "windows", allow(unused_variables))]
     let home = directories::BaseDirs::new().context("sem HOME")?.home_dir().to_path_buf();
     #[cfg(target_os = "macos")]
     let base = home.join("Library/Application Support");

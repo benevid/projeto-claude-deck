@@ -18,6 +18,10 @@ pub struct Config {
     pub sign_identity: Option<String>,
     pub port: u16,
     pub dry_run: bool,
+    /// Comandos (/compact, /init, customs...) sao enviados com Enter no fim.
+    /// `false` = so digita e deixa voce revisar antes de enviar.
+    #[serde(default = "yes")]
+    pub auto_enter: bool,
     pub ble: BleCfg,
     pub deck: DeckCfg,
     pub focus: FocusCfg,
@@ -85,6 +89,10 @@ pub struct FocusCfg {
     pub vscode_terminal_keys: String,
 }
 
+fn yes() -> bool {
+    true
+}
+
 pub fn default_terminal_keys() -> String {
     "ctrl+alt+cmd+t".into()
 }
@@ -103,6 +111,7 @@ impl Default for Config {
             sign_identity: None,
             port: DEFAULT_PORT,
             dry_run: false,
+            auto_enter: true,
             ble: BleCfg::default(),
             deck: DeckCfg::default(),
             focus: FocusCfg::default(),

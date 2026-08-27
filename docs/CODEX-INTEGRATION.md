@@ -100,6 +100,30 @@ plano B abaixo.
   protocolo.
 
 
+# Windows (M4) — BLE: limite do radio, nao do codigo (2026-08-27)
+
+Bancada: PC Win11 com dongle **Realtek RTL8821CU** (`VID_0BDA&PID_C821`) e driver
+generico da Microsoft. Resultado dos testes remotos:
+- `ble scan` **acha** o deck (RSSI -62) — o radio escaneia normalmente;
+- `ble pair` (WinRT `DeviceInformationCustomPairing`) chega a negociar: o Windows pede
+  `ProvidePin` (a placa exibe o passkey), mas o resultado final e `Failed` (19) —
+  intermitente: a cerimonia so disparou em 2 de ~8 tentativas;
+- com firmware **`DECK_BLE_SECURE=0`** (sem pareamento nenhum) o `connect()` continua
+  falhando ("Not connected" / sem resposta em 20 s);
+- **controle**: o Mac conecta e le INFO da MESMA placa, mesmo firmware, na mesma sala.
+
+Conclusao: o dongle escaneia mas nao sustenta o papel de **central** BLE com o driver
+inbox. O caminho BLE do agente no Windows so pode ser validado com um adaptador que
+funcione (driver Realtek oficial ou dongle BT 5.0 Intel). Correcoes de codigo que estes
+testes renderam (validas para qualquer maquina):
+- `find_deck` sem `ScanFilter` de servico: no WinRT o anuncio chega com `services`
+  vazio e o filtro descartava o proprio deck;
+- `connect_tolerant()`: no Windows o `connect()` do btleplug pode falhar porque o WinRT
+  so conecta ao acessar o GATT — seguimos para `discover_services()`;
+- novo `clowdeck-agent ble pair [passkey]` (WinRT), interativo (pergunta o codigo que a
+  placa mostra) e com erros claros: `AccessDenied` = rodar numa **sessao de desktop**
+  (SSH/servico e Sessao 0 e o Windows recusa), `AuthenticationFailure` = passkey errado.
+
 # opencode (M7) — implementado 2026-08-25
 
 Mesmo padrao do M6, com fonte de eventos ainda melhor: o opencode faz **event-sourcing

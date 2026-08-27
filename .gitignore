@@ -21,3 +21,7 @@ firmware/**/build/
 
 # logs locais
 *.log
+
+# binarios distribuiveis (grandes; gerados por build/CI)
+# — dist/windows tem os builds do M4 para teste manual; descomente p/ nao versionar
+dist/

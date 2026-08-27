@@ -74,7 +74,8 @@ there (`CLAUDECODE` must be unset to start a nested session).
   Notification→ATTENTION (`idle_prompt` doesn't demote DONE/IDLE), Stop→DONE, SessionEnd→DEAD
   (freed after 5 s). Tap/FOCUS/ACK on DONE → IDLE.
 - `discovery/` — macOS: `ps` + one `lsof -d cwd` call + parent chain → `terminal_app` + tty,
-  every 2 s. `windows.rs` is a stub (M4).
+  every 2 s. **Windows (M4)**: `sysinfo` (name/cmdline → engine, `cwd`, parent chain →
+  `terminal_app`); no tty, so hooks match by cwd. Labels split on `/` AND `\`.
 - `hooks.rs` — axum `POST /hook/{event}?pid=$PPID&src=clowdeck`. `$PPID` inside the hook shell
   **is the `claude` PID** (hooks run as `sh -c` children of the session) — primary match key,
   `cwd` is the fallback. `install/uninstall/status` merge only the `hooks` key, recognise ours
@@ -122,7 +123,12 @@ there (`CLAUDECODE` must be unset to start a nested session).
   reading INFO — the vertical 3×4 deck has 6 session cells, so cells 6–7 are never assigned
   (sessions wait in overflow); the SESSIONS payload still carries 8 entries (PROTO_VERSION 1).
 - `web.rs` — `GET /` virtual deck, `GET /state`, `POST /event`, `GET /health`. `config.rs` —
-  `~/Library/Application Support/clowdeck/config.toml` (port, ble, deck, `[[commands]]`).
+  `~/Library/Application Support/clowdeck/config.toml` (port, ble, deck, `[[commands]]`,
+  `auto_enter`). **`auto_enter`** (default true) decides whether typed commands end with
+  Enter; `submit()` waits 280 ms before Enter (80 ms was swallowed by the macOS TUI while
+  Windows sent it — the platforms behaved differently). Custom commands that are
+  Claude-Code-only (`/voice`, `/config`, `/permissions`…) are REFUSED on codex/opencode:
+  their TUIs fuzzy-match to another command (bench: `/voice` ran `/review` on opencode).
 - TCC when running as a service: permissions (Bluetooth, Accessibility, Automation) belong to
   `clowdeck-agent` itself, not to the terminal that built it. `run` calls
   `AXIsProcessTrustedWithOptions(prompt)` once so the Accessibility entry appears; the VS Code

@@ -27,6 +27,21 @@ uuid = { version = "1", features = ["v4"] }
 futures = "0.3"
 chrono = "0.4"
 
+rusqlite = { version = "0.32", features = ["bundled"] }
+
 [target.'cfg(target_os = "macos")'.dependencies]
 core-graphics = "0.24"
 core-foundation = "0.10"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+sysinfo = "0.32"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_System_Console",
+    "Devices_Bluetooth",
+    "Devices_Enumeration",
+    "Foundation",
+    "Foundation_Collections",
+] }

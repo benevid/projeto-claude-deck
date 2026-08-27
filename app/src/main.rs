@@ -7,7 +7,9 @@ use clowdeck_agent as agent;
 use std::sync::OnceLock;
 use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{ActivationPolicy, AppHandle, Manager};
+#[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
+use tauri::{AppHandle, Manager};
 
 static SHARED: OnceLock<agent::app::Shared> = OnceLock::new();
 

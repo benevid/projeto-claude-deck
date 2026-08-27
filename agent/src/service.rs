@@ -241,24 +241,117 @@ mod imp {
 #[cfg(target_os = "macos")]
 pub use imp::{app_login_install, app_login_installed, app_login_uninstall, bootout_cli_quiet, install, status, uninstall};
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub fn bootout_cli_quiet() {}
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub fn app_login_installed() -> bool { false }
-#[cfg(not(target_os = "macos"))]
-pub fn app_login_install() -> Result<()> { anyhow::bail!("login item: so macOS por enquanto (Windows = M4)") }
-#[cfg(not(target_os = "macos"))]
-pub fn app_login_uninstall() -> Result<()> { anyhow::bail!("login item: so macOS por enquanto (Windows = M4)") }
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn app_login_install() -> Result<()> { anyhow::bail!("login item: so macOS") }
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn app_login_uninstall() -> Result<()> { anyhow::bail!("login item: so macOS") }
 
-#[cfg(not(target_os = "macos"))]
-pub fn install(_port: u16, _sign_identity: Option<&str>) -> Result<()> {
-    anyhow::bail!("service: so macOS por enquanto (Windows = M4)")
+// ---- Windows (M4): inicio no login pela chave Run do usuario ----
+#[cfg(target_os = "windows")]
+mod win {
+    use anyhow::{Context, Result};
+    use std::process::Command;
+
+    pub const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+    pub const VALUE: &str = "ClowDeck";
+
+    fn reg(args: &[&str]) -> Result<(bool, String)> {
+        let out = Command::new("reg").args(args).output().context("reg.exe")?;
+        let txt = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+        Ok((out.status.success(), txt))
+    }
+
+    pub fn install(port: u16) -> Result<()> {
+        let exe = std::env::current_exe()?;
+        let cmd = format!("\"{}\" run --port {port}", exe.display());
+        let (ok, txt) = reg(&["add", RUN_KEY, "/v", VALUE, "/t", "REG_SZ", "/d", &cmd, "/f"])?;
+        if !ok {
+            anyhow::bail!("reg add falhou: {}", txt.trim());
+        }
+        println!("inicio no login registrado em {RUN_KEY}\\{VALUE}");
+        println!("comando: {cmd}");
+        Ok(())
+    }
+
+    pub fn uninstall() -> Result<()> {
+        let (ok, txt) = reg(&["delete", RUN_KEY, "/v", VALUE, "/f"])?;
+        if !ok && !txt.contains("nao foi possivel") && !txt.contains("unable to find") {
+            eprintln!("reg delete: {}", txt.trim());
+        }
+        println!("inicio no login removido");
+        Ok(())
+    }
+
+    pub fn status() -> Result<()> {
+        let (ok, txt) = reg(&["query", RUN_KEY, "/v", VALUE])?;
+        if ok {
+            println!("inicio no login: ATIVO\n{}", txt.trim());
+        } else {
+            println!("inicio no login: nao configurado");
+        }
+        Ok(())
+    }
 }
-#[cfg(not(target_os = "macos"))]
+
+#[cfg(target_os = "windows")]
+pub fn install(port: u16, _sign_identity: Option<&str>) -> Result<()> {
+    win::install(port)
+}
+#[cfg(target_os = "windows")]
 pub fn uninstall() -> Result<()> {
-    anyhow::bail!("service: so macOS por enquanto (Windows = M4)")
+    win::uninstall()
 }
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
 pub fn status() -> Result<()> {
-    anyhow::bail!("service: so macOS por enquanto (Windows = M4)")
+    win::status()
+}
+#[cfg(target_os = "windows")]
+pub fn bootout_cli_quiet() {
+    let _ = std::process::Command::new("reg")
+        .args(["delete", win::RUN_KEY, "/v", win::VALUE, "/f"])
+        .output();
+}
+#[cfg(target_os = "windows")]
+pub fn app_login_installed() -> bool {
+    std::process::Command::new("reg")
+        .args(["query", win::RUN_KEY, "/v", "ClowDeckApp"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+#[cfg(target_os = "windows")]
+pub fn app_login_install() -> Result<()> {
+    let exe = std::env::current_exe()?;
+    let out = std::process::Command::new("reg")
+        .args(["add", win::RUN_KEY, "/v", "ClowDeckApp", "/t", "REG_SZ", "/d",
+               &format!("\"{}\"", exe.display()), "/f"])
+        .output()?;
+    if !out.status.success() {
+        anyhow::bail!("reg add (app) falhou");
+    }
+    Ok(())
+}
+#[cfg(target_os = "windows")]
+pub fn app_login_uninstall() -> Result<()> {
+    let _ = std::process::Command::new("reg")
+        .args(["delete", win::RUN_KEY, "/v", "ClowDeckApp", "/f"])
+        .output();
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn install(_port: u16, _sign_identity: Option<&str>) -> Result<()> {
+    anyhow::bail!("service: so macOS e Windows")
+}
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn uninstall() -> Result<()> {
+    anyhow::bail!("service: so macOS e Windows")
+}
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub fn status() -> Result<()> {
+    anyhow::bail!("service: so macOS e Windows")
 }
