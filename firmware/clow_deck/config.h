@@ -8,11 +8,16 @@
 // ============================================================
 
 // ── Firmware / protocolo ─────────────────────────────────
-#define FW_VERSION        "0.2"
+#define FW_VERSION        "0.3"
 #define FW_MAJOR          0
-#define FW_MINOR          2
+#define FW_MINOR          3
 #define PROTO_VERSION     1              // protocol/PROTOCOL.md
 #define DECK_NAME         "Clow Deck"
+// Autoria exibida na tela SOBRE (Ajustes > sobre). As fontes Montserrat
+// embutidas so tem ASCII: nada de acentos aqui.
+#define DEV_NAME          "Benevid Felix Silva"
+#define DEV_EMAIL         "benevid@gmail.com"
+#define DEV_URL           "github.com/benevid/projeto-claude-deck"
 
 // 1 = exige link cifrado+autenticado (bonding com passkey na tela) nas
 // characteristics de dados. 0 = so para debug de bancada.

@@ -8,14 +8,14 @@
 #   ./build.sh upload <porta>  # compila + grava na porta indicada
 #   ./build.sh monitor <porta> # abre o serial monitor (115200)
 #
-# Duas diferenças em relação ao build.sh do claude_stick, ambas necessárias:
+# Duas diferenças em relação ao build.sh do clow_deck, ambas necessárias:
 #
 #   1. PartitionScheme=huge_app (não `custom`): esta pasta não tem partitions.csv
 #      próprio — `custom` faria o core procurar um .csv aqui e abortar com
 #      "cp: .../partitions/.csv: No such file or directory". O bring-up não usa
 #      LittleFS nem NVS, então o esquema padrão basta.
 #
-#   2. O -I aponta para ../claude_stick e vai TAMBEM em compiler.S.extra_flags:
+#   2. O -I aponta para a propria pasta e vai TAMBEM em compiler.S.extra_flags:
 #      o bring-up nao tem lv_conf.h proprio e reaproveita o do firmware (que ja
 #      traz a guarda __ASSEMBLY__). O core monta os .S da LVGL com
 #      compiler.S.extra_flags — c/cpp.extra_flags nao alcancam essa etapa — e sem
@@ -26,7 +26,7 @@
 set -euo pipefail
 
 SKETCH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LV_CONF_DIR="$(cd "${SKETCH_DIR}/../claude_stick" && pwd)"
+LV_CONF_DIR="${SKETCH_DIR}"          # lv_conf.h proprio (antes vinha do claude_stick)
 FQBN="esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=huge_app,CDCOnBoot=cdc,USBMode=hwcdc,FlashMode=qio"
 PORT_DEFAULT="/dev/cu.usbmodem101"
 

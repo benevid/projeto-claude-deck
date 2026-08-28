@@ -1125,30 +1125,27 @@ static void ui_settings() {
 static void ui_about() {
   lv_obj_t *scr = lv_screen_active();
   back_cell(scr, ST_SETTINGS);
-  lv_obj_t *c = cell_placeholder(scr, 1);
-  lv_obj_set_style_opa(c, 255, 0);
-  lv_obj_t *m = icon(c, &ic_clow_b_4, C_ACCENT, 255);
-  lv_obj_center(m);
-  for (int i = 2; i < GRID_CELLS; i++) cell_placeholder(scr, i);
+  // mascote no meio da 2a linha da grade (celula 4)
+  for (int i = 1; i < GRID_CELLS; i++) {
+    lv_obj_t *c = cell_placeholder(scr, i);
+    if (i == 4) {
+      lv_obj_set_style_opa(c, 255, 0);
+      lv_obj_t *m = icon(c, &ic_clow_b_4, C_ACCENT, 255);
+      lv_obj_center(m);
+    }
+  }
   strip(scr);
-  lv_obj_set_style_text_font(g_strip.l1, &lv_font_montserrat_12, 0);
-  lv_obj_set_pos(g_strip.l2, 0, 0);
-  lv_obj_add_flag(g_strip.l1, LV_OBJ_FLAG_HIDDEN);
-  char s[400];
-  snprintf(s, sizeof(s),
-           "Clow Deck" BULLET "fw %s" BULLET "proto %d\n"
-           "BLE %s" BULLET "%s\nmtu %u" BULLET "bonds %d" BULLET "%s: %s" BULLET "%s: %s\n"
-           "heap %uk" BULLET "psram %uk" BULLET "pos-BLE %uk\n%s",
-           FW_VERSION, PROTO_VERSION,
-           BleLink::mac(), DECK_BLE_SECURE ? TRS("cifrado", "encrypted") : TRS("ABERTO (debug)", "OPEN (debug)"),
-           (unsigned)BleLink::mtu(), BleLink::numBonds(),
-           TRS("conectado", "connected"), BleLink::isConnected() ? TRS("sim", "yes") : TRS("nao", "no"),
-           TRS("autenticado", "authenticated"), BleLink::isAuthenticated() ? TRS("sim", "yes") : TRS("nao", "no"),
-           (unsigned)(ESP.getFreeHeap() / 1024), (unsigned)(ESP.getFreePsram() / 1024),
-           (unsigned)(BleLink::heapAfterInit() / 1024),
-           TRS("Periferico burro: o agente manda o estado; o deck so desenha e devolve toques.",
-               "Dumb peripheral: the agent sends state; the deck only draws and reports taps."));
-  lv_label_set_text(g_strip.l2, s);
+  // Tela de creditos: SO autoria. O diagnostico (BLE/mtu/heap) fica na faixa
+  // de AJUSTES — aqui nao cabia e cortava justamente a linha do autor.
+  char t[48];
+  snprintf(t, sizeof(t), "Clow Deck" BULLET "fw %s", FW_VERSION);
+  lv_obj_set_pos(g_strip.l1, 0, 10);
+  lv_label_set_text(g_strip.l1, t);
+  char s2[160];
+  snprintf(s2, sizeof(s2), "%s %s\n%s\n%s",
+           TRS("feito por", "built by"), DEV_NAME, DEV_EMAIL, DEV_URL);
+  lv_obj_set_pos(g_strip.l2, 0, 42);
+  lv_label_set_text(g_strip.l2, s2);
   lv_obj_set_style_text_line_space(g_strip.l2, 2, 0);
 }
 

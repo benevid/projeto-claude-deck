@@ -246,10 +246,10 @@ arduino-cli monitor -p /dev/cu.usbmodem101 -c baudrate=115200
 - 🟢 **Imagens embutidas (ARGB8888)**: `lv_image_dsc_t` na 9.2 aceita init posicional
   `{{LV_IMAGE_HEADER_MAGIC, LV_COLOR_FORMAT_ARGB8888, 0, w, h, w*4, 0}, size, data}`
   (ordem little-endian verificada em `src/draw/lv_image_dsc.h`). Bytes por pixel na
-  ordem **B,G,R,A**. Pipeline: `tools/gen_logo_assets.py` (rsvg-convert + Pillow)
-  rasteriza SVG → `logo_assets.h`.
-- 🟢 **`lv_obj_set_style_image_recolor(+_opa)`** tinge o sprite em runtime — usado para
-  deixar o Clawd cinza em estado de erro sem gerar um segundo asset.
+  ordem **B,G,R,A**. (Histórico: o sprite Clawd em ARGB8888 saiu no redesenho; hoje o
+  pipeline é `tools/gen_icons.py` → `icons.h`, tudo em **A8** — 4× menor e recolorível.)
+- 🟢 **`lv_obj_set_style_image_recolor(+_opa)`** tinge o sprite em runtime — é o que permite
+  usar um único asset A8 e pintá-lo com a cor do estado, sem gerar um segundo asset.
 - 🟡 **Animações procedurais no `loop()` > `lv_anim`** para overlays que podem morrer a
   qualquer momento (toque fecha): `lv_anim` com `exec_cb` custom apontando para objetos
   deletados = crash. Padrão do firmware: guardar ponteiros num struct, animar por tempo

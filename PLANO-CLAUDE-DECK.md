@@ -207,9 +207,13 @@ janela, sem perder o momento em que o Claude parou esperando resposta.
   gerenciar pareamento, instalar/remover hooks com um clique.
 - Persistência + migração de config; onboarding guiado de permissões (TCC).
 
-### M4 — Windows
-- BLE WinRT, `SendInput`, foco de janela + resultado do spike de Windows Terminal.
-- Ponte WSL (descoberta + hooks alcançando o agente). Instalador (MSIX ou Inno).
+### M4 — Windows ✅ (2026-08-28)
+- BLE WinRT, `SendInput`, foco de janela e descoberta (`sysinfo`) implementados e validados
+  numa máquina Win11; deck controlando sessões reais de Codex e opencode.
+- Pareamento exige **sessão de desktop** e um adaptador com papel de **central BLE + LE Secure
+  Connections** (TP-Link UB500 sim, Realtek RTL8821CU não) — ver `docs/CODEX-INTEGRATION.md`.
+- Instaladores NSIS + MSI gerados (`dist/windows/`).
+- **Pendente**: ponte WSL (descoberta + hooks alcançando o agente).
 
 ### M5 — Polimento e identidade
 - Mascote Clow no deck (glyphs no firmware): procurando host, celebrando sessão concluída,

@@ -6,6 +6,10 @@
 # macOS
 .DS_Store
 
+# bytecode do Python (tools/gen_icons.py, assets/icons_vec.py)
+__pycache__/
+*.pyc
+
 # builds Rust (agent CLI e app Tauri)
 agent/target/
 app/target/

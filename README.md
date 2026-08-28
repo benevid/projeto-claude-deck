@@ -8,10 +8,11 @@ state (working / **needs you** / done / idle), a tap brings the right window to 
 and a row of actions sends commands to the chosen session. The screen is a dumb peripheral
 over **Bluetooth LE**; the brain is a small **agent** running on your computer.
 
-> Status: **M1 vertical slice on macOS** (firmware + agent + protocol), per
-> [`PLANO-CLAUDE-DECK.md`](PLANO-CLAUDE-DECK.md). Voice works through Claude Code's own
-> `/voice` (no speech model in the agent); usage strip (M2), config app (M3), Windows (M4)
-> and the 3D grid (M5) are scaffolded but not done — see *Limitations*.
+> Status: running on **macOS and Windows** (firmware + agent + menu-bar app + protocol), per
+> [`PLANO-CLAUDE-DECK.md`](PLANO-CLAUDE-DECK.md). Claude Code, **Codex** and **opencode**
+> sessions are tracked and driven from the deck. Voice works through Claude Code's own
+> `/voice` (no speech model in the agent); the usage strip (M2) is the piece still missing —
+> see *Limitations*.
 
 ## How it works
 
@@ -158,11 +159,10 @@ sending them — useful while testing with real sessions open.
 protocol/PROTOCOL.md    GATT service, framing, payloads — the source of truth (PROTO_VERSION 1)
 firmware/clow_deck/     ESP32-S3 sketch: LVGL 9.2 UI + NimBLE GATT server (flash with ./flash.sh)
 app/                    menu-bar app (M3, Tauri 2): embeds the agent, tray menu, deck window, DMG
-firmware/claude_stick/  Usage Stick firmware, kept as the validated display/touch base (reference)
-firmware/bringup/       bare display/touch bring-up (reference)
+firmware/bringup/       bare display/touch bring-up, to validate new hardware (reference)
 agent/                  Rust agent: discovery, hooks server, session model, focus, keys, BLE, virtual deck
 case-3d/                3D divider grid (M5, pending)
-assets/brand/           Clawd/Claude Code SVGs → firmware/clow_deck/logo_assets.h
+assets/                 icon sources: vector spec, pixel-art mascot, engine logos → icons.h
 ```
 
 ## Limitations (today)
@@ -172,9 +172,13 @@ assets/brand/           Clawd/Claude Code SVGs → firmware/clow_deck/logo_asset
   to VS Code's `keybindings.json` — a non-toggling shortcut; Ctrl+` would hide the panel), focuses
   the terminal panel. It cannot pick a specific terminal tab — that is yours. Terminal.app and
   iTerm2 are focused by exact TTY.
-- **Windows**: discovery/focus modules are stubs (M4). **Voice** needs `/voice` enabled in the
-  session (once per session) and follows Claude Code's dictation language, not the deck's.
-  **Usage strip**: protocol and deck rendering exist, the agent does not send it yet (M2).
+- **Windows**: discovery, window focus and keys work. Pairing must be run from a **desktop
+  session** (`clowdeck-agent ble pair`; over SSH or a service Windows returns `AccessDenied`)
+  and needs an adapter that supports the BLE **central role with LE Secure Connections** — a
+  TP-Link UB500 works, a Realtek RTL8821CU does not. See [`docs/WINDOWS.md`](docs/WINDOWS.md).
+- **Voice** needs `/voice` enabled in the session (once per session) and follows Claude Code's
+  dictation language, not the deck's.
+- **Usage strip**: protocol and deck rendering exist, the agent does not send it yet (M2).
 - **BLE permission**: on macOS the Bluetooth prompt belongs to the app that launched the agent;
   an unsigned binary rebuilt often may be asked again.
 - Firmware updates are over USB only (no OTA by design).

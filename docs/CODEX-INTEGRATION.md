@@ -100,7 +100,31 @@ plano B abaixo.
   protocolo.
 
 
-# Windows (M4) — BLE: limite do radio, nao do codigo (2026-08-27)
+# Windows (M4) — BLE: era o radio, nao o codigo (2026-08-27, RESOLVIDO 2026-08-28)
+
+**Desfecho: o caminho BLE do Windows esta validado.** Com um **TP-Link UB500**
+(`VID_2357&PID_0604`, chip RTL8761B, driver TP-Link 1.9.1051.3016) o `scan`, o `pair` e o
+`run` funcionam de ponta a ponta — sessoes de codex e opencode controladas pelo deck.
+O adaptador que suporta o papel de central e o que decide: consulte
+
+```powershell
+[Windows.Devices.Bluetooth.BluetoothAdapter]::GetDefaultAsync()   # via WinRT
+```
+
+e exija **`IsCentralRoleSupported = True`** e
+**`AreLowEnergySecureConnectionsSupported = True`** — o firmware pede bond + MITM + SC,
+entao sem LE Secure Connections o pareamento morre em `AuthenticationFailure` (19)
+mesmo com o passkey certo. O UB500 tambem preenche o `services` no anuncio (o RTL8821CU
+mandava vazio), e o log do `BTHUSB` traz dois avisos que **nao sao erro**: id=6 "Only one
+active Bluetooth adapter" (dois radios plugados ao mesmo tempo) e id=18 "cannot store
+link keys on the local adapter" (so afeta teclado BT na BIOS).
+
+Continua valendo: `ble pair` **exige sessao de desktop** (por SSH ou tarefa nao
+interativa o WinRT devolve `AccessDenied`, status 12, sem nem disparar a cerimonia), e a
+placa so pode estar pareada-e-conectada a um host por vez — feche o app do Mac antes de
+parear no Windows.
+
+## Historico do diagnostico (dongle que nao serve)
 
 Bancada: PC Win11 com dongle **Realtek RTL8821CU** (`VID_0BDA&PID_C821`) e driver
 generico da Microsoft. Resultado dos testes remotos:
@@ -112,10 +136,9 @@ generico da Microsoft. Resultado dos testes remotos:
   falhando ("Not connected" / sem resposta em 20 s);
 - **controle**: o Mac conecta e le INFO da MESMA placa, mesmo firmware, na mesma sala.
 
-Conclusao: o dongle escaneia mas nao sustenta o papel de **central** BLE com o driver
-inbox. O caminho BLE do agente no Windows so pode ser validado com um adaptador que
-funcione (driver Realtek oficial ou dongle BT 5.0 Intel). Correcoes de codigo que estes
-testes renderam (validas para qualquer maquina):
+Conclusao (confirmada depois pela troca de adaptador): o dongle escaneia mas nao
+sustenta o papel de **central** BLE — nem com o driver inbox, nem com o oficial da
+Realtek. Correcoes de codigo que estes testes renderam (validas para qualquer maquina):
 - `find_deck` sem `ScanFilter` de servico: no WinRT o anuncio chega com `services`
   vazio e o filtro descartava o proprio deck;
 - `connect_tolerant()`: no Windows o `connect()` do btleplug pode falhar porque o WinRT

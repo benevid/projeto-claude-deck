@@ -24,8 +24,8 @@ AXS15231B 480×320 QSPI touch display, the Usage Stick board). Three pieces, per
 - `protocol/PROTOCOL.md` — GATT service, framing and payloads. **Source of truth**; any byte
   change bumps `PROTO_VERSION` in both `firmware/clow_deck/config.h` and `agent/src/protocol.rs`.
 
-`firmware/claude_stick/` (Usage Stick firmware) and `firmware/bringup/` are kept as the
-validated display/touch base — reference only, not part of the deck build.
+`firmware/bringup/` is a bare display/touch sketch kept to validate new hardware — reference
+only, not part of the deck build (it has its own `lv_conf.h`).
 
 Code comments and on-device strings are Portuguese; UI text is bilingual via `TRS(pt, en)`.
 Both READMEs (`README.md` English main, `README.pt-BR.md`) must stay in sync.
@@ -34,6 +34,7 @@ Both READMEs (`README.md` English main, `README.pt-BR.md`) must stay in sync.
 
 ```bash
 ./flash.sh [port]                       # autodetect /dev/cu.usbmodem*, compile + flash clow_deck
+                                        # refuses to guess if 2+ boards are plugged in (pass the port)
 firmware/clow_deck/build.sh             # compile only
 firmware/clow_deck/build.sh upload <p>  # compile + flash
 firmware/clow_deck/build.sh monitor <p> # serial @115200 (serial is unreliable on this board)
@@ -76,6 +77,8 @@ there (`CLAUDECODE` must be unset to start a nested session).
 - `discovery/` — macOS: `ps` + one `lsof -d cwd` call + parent chain → `terminal_app` + tty,
   every 2 s. **Windows (M4)**: `sysinfo` (name/cmdline → engine, `cwd`, parent chain →
   `terminal_app`); no tty, so hooks match by cwd. Labels split on `/` AND `\`.
+  Windows install, BLE pairing rules and the **adapter requirement** (central role + LE
+  Secure Connections; UB500 yes, RTL8821CU no) are in `docs/WINDOWS.md`.
 - `hooks.rs` — axum `POST /hook/{event}?pid=$PPID&src=clowdeck`. `$PPID` inside the hook shell
   **is the `claude` PID** (hooks run as `sh -c` children of the session) — primary match key,
   `cwd` is the fallback. `install/uninstall/status` merge only the `hooks` key, recognise ours
@@ -218,14 +221,16 @@ there (`CLAUDECODE` must be unset to start a nested session).
 - Gestures: `LV_EVENT_SHORT_CLICKED` = tap, `LV_EVENT_LONG_PRESSED` (400 ms) = hold; a hold on a
   session cell rebuilds the screen, so no `CELL_RELEASE` follows for session cells.
 - Small touch targets get `lv_obj_set_ext_click_area()`.
-- `lv_image_dsc_t` uses positional init with ARGB8888 bytes ordered **B,G,R,A** (`logo_assets.h`,
-  generated — do not hand-edit; `lv_obj_set_style_image_recolor()` grays the Clawd sprite).
+- `lv_image_dsc_t` uses positional init; ARGB8888 wants bytes ordered **B,G,R,A** (the old
+  `logo_assets.h` did that and is gone). Everything in `icons.h` today is **A8** — generated,
+  do not hand-edit; colour it at runtime with `lv_obj_set_style_image_recolor()`.
 
 ## Where to change what
 
 - Wire format → `protocol/PROTOCOL.md` first, then `agent/src/protocol.rs` (+ tests) and
   `firmware/clow_deck/{deck_types.h,ble_link.cpp}`; bump `PROTO_VERSION` on both sides.
-- Pins, BLE name/UUIDs, `DECK_BLE_SECURE`, grid constants, `FW_VERSION` → `firmware/clow_deck/config.h`.
+- Pins, BLE name/UUIDs, `DECK_BLE_SECURE`, grid constants, `FW_VERSION`, `DEV_NAME`/`DEV_EMAIL`
+  (author credit on the ABOUT screen) → `firmware/clow_deck/config.h`.
 - Palette (`C_*`), cell visuals per state, screen builders → top/middle of `clow_deck.ino`.
 - Hook → state mapping → `agent/src/model.rs`; hook command string → `agent/src/hooks.rs`.
 - Terminal support (new app) → `agent/src/discovery/macos.rs` (ancestor names) + `agent/src/focus/macos.rs`.
