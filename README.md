@@ -44,6 +44,7 @@ device**.
 - [Three engines, one deck](#three-engines-one-deck)
 - [The screens](#the-screens)
 - [Getting one running](#getting-one-running)
+  - [Don't want to install a toolchain?](#dont-want-to-install-a-toolchain)
 - [Hardware](#hardware)
 - [What it can't do yet](#what-it-cant-do-yet)
 - [License](#license)
@@ -189,19 +190,32 @@ aren't code-signed yet, so SmartScreen warns on first run — *More info → Run
 
 ### 2. Flash the board
 
-The firmware is here, it's open, and building it yourself with `arduino-cli` costs nothing —
-see **[BUILD.md](BUILD.md)**.
+Everything you need is in this repository: the firmware source, the exact board, the pin map and
+the build commands. Flashing it yourself with `arduino-cli` is documented in
+**[BUILD.md](BUILD.md)** and **costs nothing**.
 
-If you'd rather not install a toolchain, a **hosted flasher is coming soon**: plug the board into
-USB and Chrome writes the firmware over Web Serial, in about a minute, installing nothing. It
-will carry a small one-off fee per board that pays for hosting — the same arrangement as
-[usagestick.autom.my](https://usagestick.autom.my), the flasher for my other project. To be
-explicit about what that would be selling:
+```bash
+./flash.sh                    # autodetects the port, compiles and flashes
+```
 
-- **You are not paying for the firmware.** It's right here, and you can build and flash it for
-  free, forever, without an account.
+### Don't want to install a toolchain?
+
+<img src="assets/banner-web.png" width="100%" alt="Flash it from your browser — coming soon">
+
+If you're short on time — or simply don't want to deal with `arduino-cli`, board packages and
+libraries — a **hosted flasher is coming**: plug the board into USB and Chrome writes the
+firmware straight to it over Web Serial. About a minute, and it installs nothing on your machine.
+
+It will charge a **small one-off fee per board**, which pays for hosting and for building the
+convenience — the same arrangement as [usagestick.autom.my](https://usagestick.autom.my), the
+flasher for my other project. To be explicit about what is being sold:
+
+- **You are not paying for the firmware.** It is open, it is right here, and you can build and
+  flash it for free, forever, without an account.
 - The fee covers **the convenience** of doing it from a browser. It is entirely optional.
-- One payment covers **one board, for good** — including future firmware versions on it.
+- One payment covers **one board, for good** — including future firmware versions on that board.
+
+If you're comfortable with a terminal, skip it and use [BUILD.md](BUILD.md).
 
 ### 3. Pair
 

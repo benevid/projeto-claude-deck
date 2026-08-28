@@ -43,6 +43,7 @@ acontece num agente pequeno no seu computador, e **nenhuma credencial chega ao d
 - [Três engines, um deck](#três-engines-um-deck)
 - [As telas](#as-telas)
 - [Colocando um para funcionar](#colocando-um-para-funcionar)
+  - [Não quer instalar uma toolchain?](#não-quer-instalar-uma-toolchain)
 - [Hardware](#hardware)
 - [O que ainda não dá](#o-que-ainda-não-dá)
 - [Licença](#licença)
@@ -189,19 +190,33 @@ Windows ainda não são assinados, então o SmartScreen avisa na primeira execu�
 
 ### 2. Grave a placa
 
-O firmware está aqui, é aberto, e compilá-lo você mesmo com `arduino-cli` não custa nada —
-veja **[BUILD.md](BUILD.md)**.
+Tudo que você precisa está neste repositório: o código do firmware, a placa exata, a pinagem e os
+comandos de build. Gravar você mesmo com `arduino-cli` está documentado no
+**[BUILD.md](BUILD.md)** e **não custa nada**.
 
-Se você preferir não instalar uma toolchain, um **gravador web está chegando**: pluga a placa na
-USB e o Chrome escreve o firmware por Web Serial, em cerca de um minuto, sem instalar nada. Ele
-terá uma pequena taxa única por placa, que paga a hospedagem — o mesmo arranjo do
+```bash
+./flash.sh                    # autodetecta a porta, compila e grava
+```
+
+### Não quer instalar uma toolchain?
+
+<img src="assets/banner-web-pt.png" width="100%" alt="Grave pelo navegador — em breve">
+
+Se você está sem tempo — ou simplesmente não quer lidar com `arduino-cli`, pacotes de placa e
+bibliotecas — um **gravador web está chegando**: pluga a placa na USB e o Chrome escreve o
+firmware direto nela por Web Serial. Cerca de um minuto, e não instala nada na sua máquina.
+
+Ele vai cobrar uma **pequena taxa única por placa**, que paga a hospedagem e o trabalho de
+construir a conveniência — o mesmo arranjo do
 [usagestick.autom.my](https://usagestick.autom.my), o gravador do meu outro projeto. Para ser
-explícito sobre o que estaria sendo vendido:
+explícito sobre o que está sendo vendido:
 
-- **Você não está pagando pelo firmware.** Ele está aqui, e você pode compilar e gravar de graça,
-  para sempre, sem conta nenhuma.
+- **Você não está pagando pelo firmware.** Ele é aberto, está aqui, e você pode compilar e gravar
+  de graça, para sempre, sem conta nenhuma.
 - A taxa cobre **a conveniência** de fazer isso pelo navegador. É totalmente opcional.
 - Um pagamento cobre **uma placa, para sempre** — incluindo versões futuras do firmware nela.
+
+Se você se vira num terminal, pule isso e use o [BUILD.md](BUILD.md).
 
 ### 3. Pareie
 

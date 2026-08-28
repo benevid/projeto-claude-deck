@@ -23,6 +23,7 @@ from icons_vec import ICONS  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "assets")
 FONT_SB = os.path.join(ROOT, "assets", "fonts", "Montserrat-SemiBold.ttf")
+FONT_B = os.path.join(ROOT, "assets", "fonts", "Montserrat-Bold.ttf")
 
 # ---- tokens (espelham os #define C_* do firmware) ----------------------
 C_BG_TOP, C_BG_BOTTOM = 0x0C0D0C, 0x141513
@@ -59,6 +60,10 @@ def over_cell(col, opa):
 
 def F(px):
     return ImageFont.truetype(FONT_SB, px * SC)
+
+
+def FB(px):
+    return ImageFont.truetype(FONT_B, px * SC)
 
 
 def cell_x(i):
@@ -307,8 +312,72 @@ def mark(scale=6):
     return im
 
 
+def banner_flasher(pt=False):
+    """assets/banner-web[-pt].png — faixa da secao do gravador web (1600x440 @1x)."""
+    BW, BH = 800, 220
+    im = Image.new("RGB", (BW * SC, BH * SC))
+    d = ImageDraw.Draw(im)
+    for y in range(BH * SC):
+        d.line([(0, y), (BW * SC, y)], fill=mix(C_BG_TOP, C_BG_BOTTOM, y / (BH * SC)))
+    # ceu estrelado, o mesmo tile do firmware
+    tw, th, data = G.sparkle_tile(160)
+    tile = Image.new("L", (tw, th))
+    tile.putdata(data)
+    tile = tile.resize((tw * SC, th * SC), Image.LANCZOS)
+    stars = Image.new("L", (BW * SC, BH * SC), 0)
+    for ty in range(0, BH * SC, th * SC):
+        for tx in range(0, BW * SC, tw * SC):
+            stars.paste(tile, (tx, ty))
+    stars = stars.point(lambda v: int(v * 40 / 255))
+    im.paste(Image.new("RGB", im.size, rgb(C_ACCENT)), (0, 0), stars)
+
+    # (as fontes embutidas do LVGL sao ASCII, mas aqui e PNG com TTF: acentos valem)
+    eyebrow = "EM BREVE" if pt else "COMING SOON"
+    title = "Grave pelo navegador." if pt else "Flash it from your browser."
+    sub1 = ("Sem toolchain, sem arduino-cli. Pluga na USB" if pt
+            else "No toolchain, no arduino-cli. Plug the board into USB")
+    sub2 = ("e o Chrome grava a placa em cerca de um minuto." if pt
+            else "and Chrome writes the firmware in about a minute.")
+    foot = ("O firmware continua aberto — compilar você mesmo é de graça, sempre."
+            if pt else "The firmware stays open — building it yourself is free, forever.")
+    text(im, eyebrow, 56, 46, F(13), C_ACCENT, ls=4)
+    # o titulo tem que caber na coluna ate a janela: mede e escolhe o corpo
+    col = 470 - 56 - 24
+    size = 34
+    while size > 18 and d.textlength(title, font=FB(size)) / SC > col:
+        size -= 1
+    text(im, title, 54, 68, FB(size), C_TEXT)
+    text(im, sub1, 56, 122, F(15), C_MUTED)
+    text(im, sub2, 56, 145, F(15), C_MUTED)
+    text(im, foot, 56, 180, F(13), C_FAINT)
+
+    # janelinha de navegador gravando (mesma linguagem visual das celulas)
+    wx, wy, ww, wh = 470, 46, 282, 128
+    panel(im, wx, wy, ww, wh, 14, C_CELL, C_CELL_LINE)
+    for i, c in enumerate((C_ERR, C_ATTN, C_DONE)):
+        d.ellipse([(wx + 16 + i * 14) * SC, (wy + 15) * SC,
+                   (wx + 22 + i * 14) * SC, (wy + 21) * SC], fill=rgb(c))
+    text(im, "clowdeck.autom.my", wx + ww / 2 + 18, wy + 12, F(11), C_FAINT, anchor="ma")
+    text(im, "Gravando o firmware..." if pt else "Writing the firmware...",
+         wx + 18, wy + 46, F(13), C_TEXT)
+    text(im, "64%", wx + ww - 18, wy + 46, FB(13), C_ACCENT, anchor="ra")
+    d.rounded_rectangle([(wx + 18) * SC, (wy + 74) * SC, (wx + ww - 18) * SC, (wy + 82) * SC],
+                        radius=4 * SC, fill=rgb(C_CELL_DIM))
+    d.rounded_rectangle([(wx + 18) * SC, (wy + 74) * SC,
+                         (wx + 18 + (ww - 36) * 0.64) * SC, (wy + 82) * SC],
+                        radius=4 * SC, fill=rgb(C_ACCENT))
+    text(im, "Não desconecte a placa." if pt else "Do not unplug the board.",
+         wx + 18, wy + 96, F(11), C_FAINT)
+    return im
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for pt in (False, True):
+        b = banner_flasher(pt)
+        pb = os.path.join(OUT, "banner-web-pt.png" if pt else "banner-web.png")
+        b.save(pb)
+        print(f"  {os.path.relpath(pb, ROOT)}  {b.size[0]}x{b.size[1]}")
     mk = mark()
     pm = os.path.join(OUT, "clow-mark.png")
     mk.save(pm)
