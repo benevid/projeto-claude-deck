@@ -200,15 +200,15 @@ the build commands. Flashing it yourself with `arduino-cli` is documented in
 
 ### Don't want to install a toolchain?
 
-<img src="assets/banner-web.png" width="100%" alt="Flash it from your browser — coming soon">
+<a href="https://usagestick.autom.my"><img src="assets/banner-web.png" width="100%" alt="Flash it from your browser at usagestick.autom.my"></a>
 
 If you're short on time — or simply don't want to deal with `arduino-cli`, board packages and
-libraries — a **hosted flasher is coming**: plug the board into USB and Chrome writes the
-firmware straight to it over Web Serial. About a minute, and it installs nothing on your machine.
+libraries — there's a hosted flasher at **[usagestick.autom.my](https://usagestick.autom.my)**.
+Create an account, plug the board into USB, and Chrome writes the firmware straight to it over
+Web Serial. It takes about a minute and installs nothing on your machine.
 
-It will charge a **small one-off fee per board**, which pays for hosting and for building the
-convenience — the same arrangement as [usagestick.autom.my](https://usagestick.autom.my), the
-flasher for my other project. To be explicit about what is being sold:
+That service charges a **small one-off fee per board**, which pays for hosting and for building
+the convenience. To be explicit about what is being sold:
 
 - **You are not paying for the firmware.** It is open, it is right here, and you can build and
   flash it for free, forever, without an account.

@@ -200,16 +200,16 @@ comandos de build. Gravar você mesmo com `arduino-cli` está documentado no
 
 ### Não quer instalar uma toolchain?
 
-<img src="assets/banner-web-pt.png" width="100%" alt="Grave pelo navegador — em breve">
+<a href="https://usagestick.autom.my"><img src="assets/banner-web-pt.png" width="100%" alt="Grave pelo navegador em usagestick.autom.my"></a>
 
 Se você está sem tempo — ou simplesmente não quer lidar com `arduino-cli`, pacotes de placa e
-bibliotecas — um **gravador web está chegando**: pluga a placa na USB e o Chrome escreve o
-firmware direto nela por Web Serial. Cerca de um minuto, e não instala nada na sua máquina.
+bibliotecas — existe um gravador web em
+**[usagestick.autom.my](https://usagestick.autom.my)**. Crie uma conta, pluga a placa na USB, e o
+Chrome escreve o firmware direto nela por Web Serial. Leva cerca de um minuto e não instala nada
+na sua máquina.
 
-Ele vai cobrar uma **pequena taxa única por placa**, que paga a hospedagem e o trabalho de
-construir a conveniência — o mesmo arranjo do
-[usagestick.autom.my](https://usagestick.autom.my), o gravador do meu outro projeto. Para ser
-explícito sobre o que está sendo vendido:
+Esse serviço cobra uma **pequena taxa única por placa**, que paga a hospedagem e o trabalho de
+construir a conveniência. Para ser explícito sobre o que está sendo vendido:
 
 - **Você não está pagando pelo firmware.** Ele é aberto, está aqui, e você pode compilar e gravar
   de graça, para sempre, sem conta nenhuma.

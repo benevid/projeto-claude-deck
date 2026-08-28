@@ -332,7 +332,7 @@ def banner_flasher(pt=False):
     im.paste(Image.new("RGB", im.size, rgb(C_ACCENT)), (0, 0), stars)
 
     # (as fontes embutidas do LVGL sao ASCII, mas aqui e PNG com TTF: acentos valem)
-    eyebrow = "EM BREVE" if pt else "COMING SOON"
+    eyebrow = "SEM INSTALAR NADA" if pt else "NO INSTALL NEEDED"
     title = "Grave pelo navegador." if pt else "Flash it from your browser."
     sub1 = ("Sem toolchain, sem arduino-cli. Pluga na USB" if pt
             else "No toolchain, no arduino-cli. Plug the board into USB")
@@ -357,7 +357,7 @@ def banner_flasher(pt=False):
     for i, c in enumerate((C_ERR, C_ATTN, C_DONE)):
         d.ellipse([(wx + 16 + i * 14) * SC, (wy + 15) * SC,
                    (wx + 22 + i * 14) * SC, (wy + 21) * SC], fill=rgb(c))
-    text(im, "clowdeck.autom.my", wx + ww / 2 + 18, wy + 12, F(11), C_FAINT, anchor="ma")
+    text(im, "usagestick.autom.my", wx + ww / 2 + 18, wy + 12, F(11), C_FAINT, anchor="ma")
     text(im, "Gravando o firmware..." if pt else "Writing the firmware...",
          wx + 18, wy + 46, F(13), C_TEXT)
     text(im, "64%", wx + ww - 18, wy + 46, FB(13), C_ACCENT, anchor="ra")
