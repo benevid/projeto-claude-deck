@@ -27,15 +27,17 @@ e o TCC esquece as permissoes a cada build). Com "Apple Development: ..." roda n
 maquinas do time de dev. Para DISTRIBUIR fora da App Store precisa de
 **Developer ID Application** + notarizacao (abaixo).
 
-## Dados reais deste projeto (2026-08-24)
+## Como isto esta configurado aqui
 
-- Certificado: `Developer ID Application: BENTEK TECNOLOGIA LTDA (24U457W82X)`
-- Conta Apple dona do time/certificado: `administrador@bentektecnologia.com.br`
-  (as senhas de app para notarizacao sao geradas NESSA conta em appleid.apple.com —
-  senha de app de outro Apple ID da 401)
-- Perfil de credenciais no keychain: `clowdeck` (`xcrun notarytool ... --keychain-profile clowdeck`)
-- O certificado "Apple Development: teafelix@gmail.com (82886KPK9X)" e de OUTRO time —
-  serve so para builds locais de desenvolvimento.
+- Certificado usado nas releases: um **Developer ID Application** da conta paga
+  (`security find-identity -v -p codesigning` lista o que existe no keychain).
+- Perfil de credenciais no keychain: `clowdeck`
+  (`xcrun notarytool ... --keychain-profile clowdeck`).
+- **A senha de app precisa ser gerada na MESMA conta Apple dona do certificado**, em
+  appleid.apple.com — uma senha de app de outro Apple ID devolve **401** na notarizacao.
+  Foi exatamente esse o erro que custou uma tarde: havia dois Apple IDs em uso na maquina.
+- Um certificado "Apple Development" de outro time serve so para build local: assina, mas
+  nao distribui.
 
 ## Criar o certificado "Developer ID Application" (uma vez)
 

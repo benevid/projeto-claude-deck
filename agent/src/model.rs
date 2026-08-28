@@ -790,7 +790,7 @@ mod tests {
         // Windows (M4): separador `\` e barra final
         assert_eq!(label_for("C:\\dev\\clowdeck"), "clowdeck");
         assert_eq!(label_for("C:\\dev\\clowdeck\\"), "clowdeck");
-        assert_eq!(label_for("C:\\Users\\photobox\\"), "photobox");
+        assert_eq!(label_for("C:\\Users\\dev\\"), "dev");
         assert_eq!(label_for("C:\\"), "C");
     }
 }
