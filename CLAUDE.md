@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Clow Deck** — a physical "stream deck" for Claude Code on the Guition JC4832W535 (ESP32-S3 +
 AXS15231B 480×320 QSPI touch display, the Usage Stick board). Three pieces, per
-`PLANO-CLAUDE-DECK.md`:
+`PLANO-CLAUDE-DECK.md` (local only, gitignored):
 
 - `firmware/clow_deck/` — arduino-cli sketch, LVGL 9.2 UI (4×3 grid) + **NimBLE GATT server**.
   Dumb peripheral: draws what it receives, notifies touches. **No secrets on the device.**
@@ -20,7 +20,7 @@ AXS15231B 480×320 QSPI touch display, the Usage Stick board). Three pieces, per
   LaunchAgent (same port) and takes over; "start at login" writes `my.autom.clowdeck.app.plist`
   (KeepAlive only on non-zero exit, so Quit sticks). Watchdog freeze → `AppHandle::restart()`.
   Build: `cd app && cargo tauri build` (needs `~/.cargo/bin` in PATH, rustc ≥ 1.88); signing +
-  notarization in `docs/RELEASE-MACOS.md`.
+  notarization in `docs/RELEASE-MACOS.md` (local only, gitignored).
 - `protocol/PROTOCOL.md` — GATT service, framing and payloads. **Source of truth**; any byte
   change bumps `PROTO_VERSION` in both `firmware/clow_deck/config.h` and `agent/src/protocol.rs`.
 
@@ -112,7 +112,7 @@ there (`CLAUDECODE` must be unset to start a nested session).
 - `codex.rs` — M6.a: embeds `codex app-server` (NDJSON stdio child), polls `thread/list`
   (MUST pass explicit `sourceKinds`), maps thread status/updatedAt to session states for
   processes the discovery classified as `Engine::Codex` (flags bit2 → deck chip "CDX").
-  Threads loaded in another process read as `notLoaded` — study in `docs/CODEX-INTEGRATION.md`.
+  Threads loaded in another process read as `notLoaded` — study in `docs/CODEX-INTEGRATION.md` (local only, gitignored).
 - `opencode.rs` — M7: live states for opencode sessions by polling its sqlite event log
   (`~/.local/share/opencode/opencode.db`, system `sqlite3 -json`, rowid offset); engine
   flag bit3 → chip "OC". Actions per engine in dispatch (mode=Tab, /new, /init, approve=Enter).
@@ -240,4 +240,6 @@ there (`CLAUDECODE` must be unset to start a nested session).
 
 - `.env`, `.mcp.json`, `.claude/` are not for git; `agent/target/` is gitignored.
 - READMEs are bilingual and must not drift; a stale translation is worse than none.
-- `case-3d/` holds the STL of the divider grid (M5); `PLANO-CLAUDE-DECK.md` is the roadmap.
+- `case-3d/` holds the STL of the divider grid (M5). `PLANO-CLAUDE-DECK.md`,
+  `docs/CODEX-INTEGRATION.md` and `docs/RELEASE-MACOS.md` are **local-only** notes
+  (gitignored): roadmap, bench log and the signing process. Only `docs/WINDOWS.md` ships.

@@ -1,187 +1,263 @@
-[🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md)
+<div align="center">
 
-# Clow Deck — a physical stream deck for Claude Code
+<img src="assets/clow-mark.png" width="88" alt="Clow">
 
-Turns the 3.5" touch screen of the Usage Stick (Guition JC4832W535, ESP32-S3) into a
-**desk panel for your Claude Code sessions**: every open session is a button with a live
-state (working / **needs you** / done / idle), a tap brings the right window to the front,
-and a row of actions sends commands to the chosen session. The screen is a dumb peripheral
-over **Bluetooth LE**; the brain is a small **agent** running on your computer.
+# Clow Deck
 
-> Status: running on **macOS and Windows** (firmware + agent + menu-bar app + protocol), per
-> [`PLANO-CLAUDE-DECK.md`](PLANO-CLAUDE-DECK.md). Claude Code, **Codex** and **opencode**
-> sessions are tracked and driven from the deck. Voice works through Claude Code's own
-> `/voice` (no speech model in the agent); the usage strip (M2) is the piece still missing —
-> see *Limitations*.
+**Every AI coding session you have open — on one touch screen, in your hand.**<br>
+Claude Code, Codex and opencode. Tap to jump in. Hold to drive.
 
-## How it works
+**English** · [Português](README.pt-BR.md)
 
-```
- Claude Code session ──hooks (curl → localhost:47831)──▶ ┌──────────────┐   BLE (GATT)   ┌──────────┐
- Claude Code session ──hooks────────────────────────────▶ │ clowdeck-    │ ─SESSIONS────▶ │ Clow     │
- `claude` processes  ◀─ps + lsof (every 2 s)───────────── │ agent (Rust) │ ◀─EVENT (tap)─ │ Deck     │
- terminal window     ◀─focus + synthetic keys──────────── │              │                │ (ESP32)  │
- http://127.0.0.1:47831/  (virtual deck, same grid)  ◀──  └──────────────┘                └──────────┘
-```
+<img src="https://img.shields.io/github/v/release/benevid/projeto-claude-deck?style=for-the-badge&color=D97757&label=release" alt="release">
+<img src="https://img.shields.io/badge/macOS-Apple%20Silicon-FAF9F5?style=for-the-badge" alt="macOS">
+<img src="https://img.shields.io/badge/Windows-x64-FAF9F5?style=for-the-badge" alt="Windows">
+<img src="https://img.shields.io/badge/engines-Claude%20·%20Codex%20·%20opencode-A3E635?style=for-the-badge" alt="engines">
+<img src="https://img.shields.io/badge/license-Noncommercial-B0AEA5?style=for-the-badge" alt="license">
 
-1. **Hooks** — `clowdeck-agent hooks install` adds one `curl` hook per Claude Code event
-   (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PermissionRequest`,
-   `Notification`, `Stop`, `PreCompact`, `SessionEnd`) to `~/.claude/settings.json`. Each
-   hook posts its stdin JSON to the agent in under a second and never blocks Claude
-   (`-m 1 … || true`). The shell's `$PPID` is the `claude` PID, which is how a hook is
-   matched to the process the agent discovered.
-2. **Discovery** — the agent lists `claude` processes (`ps`) with their cwd (`lsof`) and
-   walks the parent chain to learn which terminal app owns them (VS Code, Terminal, iTerm2…).
-   Sessions without hook data show as *unknown* (neutral).
-3. **Deck** — the agent writes the 8 session cells to the deck over GATT on every change
-   (+ a 3 s heartbeat); the deck notifies taps/holds back. Pairing uses a 6-digit passkey
-   shown **on the deck** (bonding + MITM). Nothing secret ever lives on the device.
-4. **Focus / keys** — a tap focuses the session's window (AppleScript for Terminal/iTerm2 by
-   TTY; `code <folder>` + window title for VS Code) and marks it active on the deck;
-   actions type `Shift+Tab`, `/compact`, `/clear` (confirmed on the deck), `Esc`, `Enter`.
+<br>
 
-## Quick start (macOS)
+<img src="assets/mock-home.png" width="300" alt="Clow Deck home screen">
 
-### 1. Firmware
+</div>
 
-Toolchain: arduino-cli 1.4.x · core `esp32:esp32` 3.3.11 · Arduino_GFX 1.6.5 · lvgl 9.2.2 ·
-**NimBLE-Arduino 2.5.1** (`arduino-cli lib install NimBLE-Arduino`).
+---
 
-```bash
-./flash.sh                         # autodetects /dev/cu.usbmodem*, compiles + flashes
-firmware/clow_deck/build.sh        # compile only
-```
+You end up with six terminals open and no idea which one is waiting for you. One is compiling,
+one wants permission to write a file, one finished four minutes ago, and the one you actually
+care about is buried behind a browser window.
 
-The deck boots into **"searching host"** (Clow mascot + BLE name/MAC + free heap).
-Holding the mascot opens the deck settings (brightness, language, forget pairing).
+**Clow Deck puts all of them on a small screen on your desk.** Each session gets a tile that
+glows green while it works, flashes amber when it needs you, and settles when it's done. Tap a
+tile and the right window jumps to the front. Hold it and you get the controls — approve, escape,
+enter, `/compact`, push-to-talk — without touching the keyboard.
 
-### 2. Agent
+The screen itself is a **dumb peripheral**: it draws what it receives and reports touches. All
+the thinking happens in a small agent on your computer, and **no credential ever reaches the
+device**.
 
-```bash
-cd agent && cargo build --release            # Rust 1.87+
-./target/release/clowdeck-agent doctor       # curl, lsof, osascript, Accessibility, Bluetooth, hooks
-./target/release/clowdeck-agent hooks install   # writes ~/.claude/settings.json (backup kept)
-./target/release/clowdeck-agent run          # discovery + hooks + virtual deck + BLE
-```
+---
 
-- Open **http://127.0.0.1:47831/** — the *virtual deck* mirrors the physical one (same grid,
-  same states, click = tap, long-press = session menu). It works even without the board.
-- **Voice** = Claude Code's `/voice`: once per session turn voice mode on (type `/voice`, or
-  the `voice` entry in the deck's command list), then **hold** the session's Voz button on the
-  deck — the agent focuses the session and holds the space bar; release to stop. Claude Code
-  transcribes (it takes 2–3 s to start recording) and leaves the text in the prompt — check it
-  and press Enter (on the deck or the keyboard). Dictation language is Claude Code's own
-  setting (`/config` → Dictation language); the deck's PT/EN does not change it.
-- **macOS permissions**: the first run asks for **Bluetooth** and **Accessibility** (the
-  prompts name the process that runs the agent — `clowdeck-agent` when installed as a service,
-  otherwise the terminal app that launched it — click *Allow* / enable the toggle), and
-  **Automation** the first time a window is focused. Without Accessibility the window is still
-  raised but no keys are sent. `doctor` reports what is missing; an unsigned binary that is
-  rebuilt may need the Accessibility toggle flipped again.
-- **Pairing**: on the first authenticated write macOS opens a pairing dialog and the deck shows
-  a 6-digit passkey — type it once; the bond is remembered on both sides (the agent waits up
-  to 75 s for you).
-- **Run at login**: `clowdeck-agent service install` registers a launchd LaunchAgent
-  (KeepAlive: restarts in 5 s if the agent dies or its watchdog trips). Logs:
-  `~/Library/Logs/clowdeck/agent.log`. Re-run it after rebuilding; `service uninstall` removes it.
-  `service install` also **code-signs the binary** with a stable identifier
-  (`my.autom.clowdeck-agent`) using your "Developer ID Application" or "Apple Development"
-  identity (override with `sign_identity` in config.toml). Without that, the linker's ad-hoc
-  signature changes on every build and macOS drops the Bluetooth/Accessibility grants each time.
-  Grant **Bluetooth** and **Accessibility** to `clowdeck-agent` once after the first signed install,
-  then run `service install` again (macOS only applies a new Accessibility grant to a restarted
-  process). An entry left over from an unsigned build shows as enabled but is ignored — remove it.
+## Contents
 
-`clowdeck-agent hooks uninstall` removes only the deck's hooks and leaves any other hooks intact.
+- [What it shows you](#what-it-shows-you)
+- [Three engines, one deck](#three-engines-one-deck)
+- [The screens](#the-screens)
+- [Getting one running](#getting-one-running)
+- [Hardware](#hardware)
+- [What it can't do yet](#what-it-cant-do-yet)
+- [License](#license)
 
-## The screen (320×480 portrait, 3×4 grid — the 3D divider sits on the 4 px gaps)
+---
 
-```
-┌─────────┬─────────┬─────────┐
-│ saup  ● │ deck  ✔ │ n8n   ⚠ │  row 0: sessions 0–2  (folder · mode chip · age ·
-├─────────┼─────────┼─────────┤           faded pixel mascot tinted by state)
-│ ios-app │   ---   │   ---   │  row 1: sessions 3–5
-├─────────┼─────────┼─────────┤
-│ 🌐 PT   │ ☀ 80%   │ ⚙      │  row 2: language · brightness · settings
-├─────────┴─────────┴─────────┤
-│ 3 sessions · 1 needs you  ᗧ │  row 3: free strip (status, two text lines)
-└─────────────────────────────┘
-```
+## What it shows you
 
-Theme **Deep Space Glass** (`design/THEME.md`): near-black gradient, translucent dark-glass
-cells with a hairline edge and a top shine, 18 px radii, Montserrat. The mascot is
-original Space-Invaders-style pixel art; button icons are outline glyphs with
-anti-aliased strokes, Stream-Deck-icon-pack style (`design/ICONS.md`,
-`assets/pixel/` + `assets/icons_vec.py`, rendered as A8 bitmaps by
-`tools/gen_icons.py`).
+Sessions are discovered automatically — you don't register anything. The agent watches for
+`claude`, `codex` and `opencode` processes, figures out which terminal or editor window each one
+lives in, and gives it a tile.
 
-| State | Meaning | Look |
-|---|---|---|
-| `WORKING` | Claude is working | cyan pulse, mascot 24 % |
-| `ATTENTION` | permission prompt / question / notification | **amber, blinking** |
-| `DONE` | Claude finished and is waiting for you | green (slow blink for the first 60 s) |
-| `IDLE` | waiting for a prompt, acknowledged | glass, dim green mascot |
-| `UNKNOWN` | process seen, no hook data yet | neutral |
-| `ERROR` / `DEAD` | agent error / process gone (cell frees after 5 s) | red / grey, struck through |
+State comes from the engine itself, not from guessing:
 
-Every screen keeps the same grid: rows 0–2 are cells, row 3 is a free strip.
-- **Home**: tap a session = focus its window + mark active (coral border); hold = session
-  page. Row 2: tap language toggles PT/EN, tap brightness cycles 3 levels (hold either →
-  settings), gear = settings. Strip: link/session status and 5 h usage when the agent sends it.
-- **Session page** (9 cells): `<` back, focus, **voice** (hold to talk — the agent holds
-  Space in the session's `/voice` mode and releases it when you let go), mode (`Shift+Tab`),
-  esc, enter, `/compact`, `/clear` (confirmed), tab (accept the terminal's suggestion). Strip: label, state, mode, age + a `cmd`
-  button (commands page, paginated with `>`).
-- **Settings**: brightness −/+, language, forget pairing (confirmed), about. **Searching host**:
-  the mascot animates while the deck advertises; the 6-digit passkey shows on screen when
-  macOS asks for it.
+| Tile | Means | Where it comes from |
+|:--:|---|---|
+| 🟢 **green, pulsing** | working right now | a tool call started, a prompt was submitted |
+| 🟠 **amber, flashing** | **waiting for you** | a permission request or a notification |
+| 🫒 **olive** | finished, unread | the turn ended |
+| ⬜ **dim** | idle | started, nothing happening |
+| 🔴 **red** | error | the session failed |
 
-## Agent CLI and config
+The amber flash is the one that matters. It's the difference between noticing a permission
+prompt in three seconds and finding it ten minutes later.
 
-```
-clowdeck-agent run [--no-ble] [--dry-run] [--port N]
-clowdeck-agent hooks install|uninstall|status [--settings PATH]
-clowdeck-agent sessions            # cell · pid · tty · terminal · cwd · state
-clowdeck-agent focus <pid>
-clowdeck-agent ble scan|info
-clowdeck-agent doctor
-clowdeck-agent service install|uninstall|status   # macOS launchd
-```
+Each tile also carries the **project name**, how long it's been in that state, and a chip naming
+the engine (`CC` · `CDX` · `OC`) over that engine's own logo, faded into the background.
 
-Config: `~/Library/Application Support/clowdeck/config.toml` (created on first run) —
-port, BLE on/off and frame size, deck brightness/language, and `[[commands]]`
-(`label`, `text`, `confirm`) for the CMD page. `--dry-run` logs keystrokes instead of
-sending them — useful while testing with real sessions open.
+---
 
-## Repository layout
+## Three engines, one deck
 
-```
-protocol/PROTOCOL.md    GATT service, framing, payloads — the source of truth (PROTO_VERSION 1)
-firmware/clow_deck/     ESP32-S3 sketch: LVGL 9.2 UI + NimBLE GATT server (flash with ./flash.sh)
-app/                    menu-bar app (M3, Tauri 2): embeds the agent, tray menu, deck window, DMG
-firmware/bringup/       bare display/touch bring-up, to validate new hardware (reference)
-agent/                  Rust agent: discovery, hooks server, session model, focus, keys, BLE, virtual deck
-case-3d/                3D divider grid (M5, pending)
-assets/                 icon sources: vector spec, pixel-art mascot, engine logos → icons.h
-```
+Clow Deck speaks to all three, and it does **not** pretend they're identical — the same button
+does the right thing per engine, or politely refuses when the engine has no equivalent.
 
-## Limitations (today)
+| | **Claude Code** | **Codex** | **opencode** |
+|---|:--:|:--:|:--:|
+| Live session states | hooks | `app-server` | sqlite event log |
+| Focus window · Esc · Enter · Tab | ✅ | ✅ | ✅ |
+| Approve a pending request | `1` | `y` | Enter |
+| Cycle mode | `Shift+Tab` | ❌ *use `/approvals`* | `Tab` (build ↔ plan) |
+| New session | `/clear` | `/new` | `/new` |
+| `/init` · `/compact` | ✅ | ✅ | `/init` |
+| Quit | `/exit` | `/quit` | `/exit` |
+| Push-to-talk | ✅ *Claude Code's `/voice`* | ❌ | ❌ |
 
-- **VS Code integrated terminal**: the agent raises the right VS Code window and, if you ran
-  `clowdeck-agent keybinding install` (adds `ctrl+alt+cmd+t → workbench.action.terminal.focus`
-  to VS Code's `keybindings.json` — a non-toggling shortcut; Ctrl+` would hide the panel), focuses
-  the terminal panel. It cannot pick a specific terminal tab — that is yours. Terminal.app and
-  iTerm2 are focused by exact TTY.
-- **Windows**: discovery, window focus and keys work. Pairing must be run from a **desktop
-  session** (`clowdeck-agent ble pair`; over SSH or a service Windows returns `AccessDenied`)
-  and needs an adapter that supports the BLE **central role with LE Secure Connections** — a
-  TP-Link UB500 works, a Realtek RTL8821CU does not. See [`docs/WINDOWS.md`](docs/WINDOWS.md).
-- **Voice** needs `/voice` enabled in the session (once per session) and follows Claude Code's
-  dictation language, not the deck's.
-- **Usage strip**: protocol and deck rendering exist, the agent does not send it yet (M2).
-- **BLE permission**: on macOS the Bluetooth prompt belongs to the app that launched the agent;
-  an unsigned binary rebuilt often may be asked again.
-- Firmware updates are over USB only (no OTA by design).
+> Claude-Code-only commands (`/voice`, `/config`, `/permissions`…) are **blocked** on the other
+> two rather than sent blindly. On the bench, a stray `/voice` fuzzy-matched to `/review` in
+> opencode and ran it — so now the deck refuses instead.
 
-See [`PLANO-CLAUDE-DECK.md`](PLANO-CLAUDE-DECK.md) for the roadmap and
-[`protocol/PROTOCOL.md`](protocol/PROTOCOL.md) for the wire format.
+**How each one is tracked.** Claude Code reports through its own hooks, so state is exact and
+instant. Codex runs an embedded `app-server` the agent polls for thread status. opencode
+event-sources into sqlite, which the agent tails read-only — a pending tool approval shows up as
+a tool part with `status = "pending"`, which is what drives the amber flash.
+
+---
+
+## The screens
+
+> The images are **pixel-accurate mockups**, rendered from the firmware's own geometry, palette,
+> icons and fonts — regenerate them with `python3 tools/gen_mockups.py`. Real photos coming soon.
+
+Every screen is the same **3×4 grid**: nine cells and a free strip at the bottom. That's not a
+style choice — the 3D-printed divider sits in the 4 px gaps, so the layout can never shift.
+
+### Home — all your sessions
+
+<img src="assets/mock-home.png" width="290" align="right" alt="Home screen">
+
+Six session tiles on the top two rows. The third row is always yours: **language**, **brightness**
+and **settings**. The strip at the bottom is the brand and the BLE link indicator.
+
+- **Tap** a tile → that session's window comes to the front, and the tile becomes the *active*
+  one (coral border). Tapping a finished session also marks it read.
+- **Hold** a tile → the actions page for that session.
+- Sessions keep their tile until they die, so muscle memory works: the third tile stays the third
+  tile all day.
+
+<br clear="right">
+
+### Session — the controls
+
+<img src="assets/mock-session.png" width="290" align="right" alt="Session actions screen">
+
+Nine buttons for the session you picked:
+
+- **focus** — raise the window again
+- **voice** — *hold* to talk (Claude Code's `/voice`), release to transcribe
+- **mode** — cycle permission mode
+- **esc** · **enter** · **tab** — the keys you actually reach for; `tab` accepts the suggestion
+  the terminal is offering
+- **/compact** — compact the context
+- **more** → the commands page
+
+When a session is **waiting for permission**, this page changes: *voice* and *mode* become
+**approve** and **deny**, and they blink so you can act without reading anything.
+
+<br clear="right">
+
+### Commands — the rest
+
+<img src="assets/mock-cmd.png" width="290" align="right" alt="Commands screen">
+
+What page one doesn't have: **new session**, **`/init`**, **`/exit`**, plus **your own commands**
+from the config file. Destructive ones ask for confirmation on the device.
+
+Add your own by dropping a `[[commands]]` block in `config.toml` — label, text, and whether it
+should confirm. They're pushed to the deck over BLE, paginated with `>`.
+
+<br clear="right">
+
+### Searching for a host
+
+<img src="assets/mock-search.png" width="290" align="right" alt="Searching host screen">
+
+Before the agent connects — or if you unplug it — the deck shows the mascot, the BLE status and
+its own MAC. Holding the mascot opens **Settings**, so brightness and language work even with no
+computer attached.
+
+<br clear="right">
+
+---
+
+## Getting one running
+
+Three pieces: a **board**, the **firmware** on it, and the **agent** on your computer.
+
+### 1. Install the app
+
+Download from **[Releases](https://github.com/benevid/projeto-claude-deck/releases/latest)**:
+
+| Platform | File |
+|---|---|
+| **macOS** (Apple Silicon) | `ClowDeck-<version>-macos-arm64.dmg` — signed and notarized, opens with no Gatekeeper warning |
+| **Windows** (x64) | `ClowDeck-<version>-windows-x64-setup.exe` — or the `.msi` for deployment |
+
+Launch it and you get an invader in the menu bar / system tray. Open **the virtual deck** from
+that menu — your sessions appear on their own, and **you can use the whole thing right there
+before you own any hardware**. Then click **Install hooks** so Claude Code reports its state.
+
+macOS will ask for **Accessibility** (to send keystrokes) and **Bluetooth**. Windows installers
+aren't code-signed yet, so SmartScreen warns on first run — *More info → Run anyway*.
+
+### 2. Flash the board
+
+The firmware is here, it's open, and building it yourself with `arduino-cli` costs nothing —
+see **[BUILD.md](BUILD.md)**.
+
+If you'd rather not install a toolchain, a **hosted flasher is coming soon**: plug the board into
+USB and Chrome writes the firmware over Web Serial, in about a minute, installing nothing. It
+will carry a small one-off fee per board that pays for hosting — the same arrangement as
+[usagestick.autom.my](https://usagestick.autom.my), the flasher for my other project. To be
+explicit about what that would be selling:
+
+- **You are not paying for the firmware.** It's right here, and you can build and flash it for
+  free, forever, without an account.
+- The fee covers **the convenience** of doing it from a browser. It is entirely optional.
+- One payment covers **one board, for good** — including future firmware versions on it.
+
+### 3. Pair
+
+Power the board, open the app. On macOS the pairing dialog appears on the first write and the
+deck shows a 6-digit passkey — type it once and both sides remember.
+
+On **Windows**, pair from a desktop session with `clowdeck-agent.exe ble pair`, and check your
+Bluetooth adapter first: it must support the **BLE central role with LE Secure Connections**.
+A TP-Link UB500 works; a Realtek RTL8821CU does not. Details in
+**[docs/WINDOWS.md](docs/WINDOWS.md)**.
+
+---
+
+## Hardware
+
+**Guition JC4832W535** — ESP32-S3 with an AXS15231B 480×320 QSPI touch panel, used in portrait
+at 320×480. Roughly the size of a deck of cards. Pin map, tested library versions and the flush
+pipeline are in [`firmware/REFERENCIA-HARDWARE-LVGL.md`](firmware/REFERENCIA-HARDWARE-LVGL.md).
+
+The connection is **Bluetooth LE** with bonding, MITM protection and LE Secure Connections. The
+device holds no tokens, no Wi-Fi credentials and no session content — just labels, states and
+the touches it sends back. Firmware updates are over USB only, by design.
+
+A printable **3×4 divider grid** that turns the flat glass into something you can find by feel is
+in [`case-3d/`](case-3d/).
+
+---
+
+## What it can't do yet
+
+- **It can't pick a terminal tab.** The agent raises the right window — Terminal.app and iTerm2
+  by exact TTY, VS Code/Cursor/Windsurf by the window holding that folder — but which tab is
+  focused inside it is yours to manage.
+- **Voice is Claude Code's.** You turn `/voice` on once per session, and the dictation language
+  follows Claude Code's setting, not the deck's.
+- **The usage strip isn't wired.** The protocol and the rendering exist; the agent doesn't send
+  it yet.
+- **Windows Bluetooth is picky** — see above.
+- **Intel Macs** aren't covered by the release binary; build from source.
+
+---
+
+## License
+
+**[PolyForm Noncommercial 1.0.0](LICENSE.md)** — use it, change it, build it, put it on your own
+desk, share it. Use it at a nonprofit, a school or a public institution. What you may **not** do
+is sell it, or sell a product or service built on it, to anyone else.
+
+If you want to do something commercial with it, ask.
+
+---
+
+<div align="center">
+
+Built by **Benevid Felix Silva** · [benevid@gmail.com](mailto:benevid@gmail.com)
+
+Technical documentation: **[BUILD.md](BUILD.md)** · [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md) · [`design/THEME.md`](design/THEME.md) · [`docs/WINDOWS.md`](docs/WINDOWS.md)
+
+</div>

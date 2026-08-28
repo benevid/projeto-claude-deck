@@ -26,6 +26,12 @@ firmware/**/build/
 # logs locais
 *.log
 
-# binarios distribuiveis (grandes; gerados por build/CI)
-# — dist/windows tem os builds do M4 para teste manual; descomente p/ nao versionar
+# binarios distribuiveis (grandes; gerados por build/CI) — vao para as Releases
 dist/
+
+# notas internas: ficam so na maquina (roadmap, log de bancada das engines,
+# processo de assinatura/notarizacao). Comentario tem que ficar em linha propria:
+# o .gitignore NAO aceita comentario no fim da linha do padrao.
+PLANO-CLAUDE-DECK.md
+docs/CODEX-INTEGRATION.md
+docs/RELEASE-MACOS.md
